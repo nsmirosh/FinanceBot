@@ -9,6 +9,8 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/ChatHistory_schema_v2.xml
+.idea/vcs.xml
 *.iws
 *.iml
 *.ipr
@@ -34,6 +36,8 @@ bin/
 
 ### bot token ###
 src/main/kotlin/Keys.kt
+local.properties
+
 
 ### NetBeans ###
 /nbproject/private/

@@ -34,6 +34,11 @@ class Bot : TelegramLongPollingBot() {
         )
     }
 
+
+    private fun sumUpForTheDay(update: Update) {
+
+    }
+
     data class Transaction(
         val sum: Double,
         val currency: String,
