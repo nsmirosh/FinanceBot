@@ -12,10 +12,6 @@ repositories {
     mavenCentral()
 }
 
-
-val properties = Properties()
-properties.load(project.rootProject.file("local.properties").inputStream())
-
 dependencies {
     testImplementation(kotlin("test"))
     implementation("org.telegram:telegrambots:6.0.1")
