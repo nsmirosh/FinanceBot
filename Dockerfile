@@ -14,7 +14,7 @@ COPY src/ src/
 
 # Create a Keys.kt file in src/main/kotlin directory
 RUN mkdir -p src/main/kotlin && \
-    echo 'package nick.mirosh\n\nconst val BOT_TOKEN = System.getenv("BOT_TOKEN") ?: ""' > src/main/kotlin/Keys.kt
+    echo 'package nick.mirosh\n\nval BOT_TOKEN = System.getenv("BOT_TOKEN") ?: ""' > src/main/kotlin/Keys.kt
 
 # Make gradlew executable
 RUN chmod +x ./gradlew
