@@ -34,10 +34,8 @@ bin/
 !**/src/test/**/bin/
 
 
-### bot token ###
-src/main/kotlin/Keys.kt
+### ###
 local.properties
-
 
 ### NetBeans ###
 /nbproject/private/

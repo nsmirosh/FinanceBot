@@ -19,6 +19,7 @@ class Bot : TelegramLongPollingBot() {
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
+
         val message = update.message
 
         if (message.isGroupMessage || message.isSuperGroupMessage) {
