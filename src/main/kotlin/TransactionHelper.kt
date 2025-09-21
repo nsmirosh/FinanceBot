@@ -5,19 +5,33 @@ import org.telegram.telegrambots.meta.api.objects.Update
 
 fun parseUpdate(update: Update): Transaction {
 
+    //https://en.wikipedia.org/wiki/IETF_language_tag
+    val langCode = update.message.from.languageCode
+
     val text = update.message.text
     val parts = text.trim().split(" ")
 
     if (parts.size < 3) {
-        throw IllegalArgumentException("Invalid format. Expected format: 'amount currency category'")
+        throw IllegalArgumentException(
+            when (langCode) {
+                "ru" -> "Неправильный формат. Ожидаемый формат: 'сумма, валюта, категория, описание(опционально)'  '"
+                else -> "Invalid format. Expected format: 'amount currency category'"
+            }
+        )
     }
 
     val sumText = parts[0]
     val currencyText = parts[1]
     val category = parts.drop(2).joinToString(" ")
+    val description = if (parts.size > 3) parts.drop(3).joinToString(" ") else ""
 
     if (sumText.isBlank()) {
-        throw IllegalArgumentException("Sum cannot be empty")
+        throw IllegalArgumentException(
+            when (langCode) {
+                "ru" -> "cумма не может быть пустой"
+                else -> "Sum cannot be empty"
+            }
+        )
     }
 
     if (currencyText.isBlank()) {
@@ -44,5 +58,5 @@ fun parseUpdate(update: Update): Transaction {
     if (currency in hryvnaCurrency) {
         currency = "UAH"
     }
-    return Transaction(ObjectId(), update.message.date, sum, currency, category)
+    return Transaction(ObjectId(), update.message.date, sum, currency, category, description)
 }

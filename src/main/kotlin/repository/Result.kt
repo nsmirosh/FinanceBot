@@ -1,4 +1,4 @@
-package nick.mirosh
+package nick.mirosh.repository
 
 sealed class Result<out T> {
     /**
