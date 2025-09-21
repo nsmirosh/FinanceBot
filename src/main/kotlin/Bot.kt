@@ -18,7 +18,7 @@ class Bot : TelegramLongPollingBot() {
 
         var transaction: Transaction? = null
 
-        if (message.isGroupMessage) {
+        if (message.isGroupMessage || message.isSuperGroupMessage) {
             try {
                 transaction = parseText(message.text)
             } catch (
@@ -85,6 +85,7 @@ class Bot : TelegramLongPollingBot() {
         }
         return Transaction(sum, "hryvna", category)
     }
+
 
 
     fun sendText(who: Long?, what: String) {
