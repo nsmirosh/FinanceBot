@@ -11,22 +11,23 @@ class Bot : TelegramLongPollingBot() {
     }
 
     private var updateListener: ((Update) -> Unit)? = null
-    
+
     fun onUpdateListener(listener: (Update) -> Unit) {
         this.updateListener = listener
     }
 
+
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
+
 
         val message = update.message
 
 
         if (message.isGroupMessage || message.isSuperGroupMessage) {
             updateListener?.invoke(update)
-        }
-        else {
+        } else {
             println("Not a group message or super group message")
             println("message has photo = ${message.hasPhoto()} && message has text = ${message.hasText()}")
         }

@@ -17,6 +17,13 @@ fun main() {
     val repo: TransactionRepo = TransactionRepoImpl()
 
     bot.onUpdateListener { update ->
+
+
+        if (update.message.isCommand) {
+            println("Command received = ${update.message.text}")
+            return@onUpdateListener
+        }
+
         var transaction: Transaction
         try {
             transaction = parseUpdate(update)
