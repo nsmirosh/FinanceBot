@@ -2,6 +2,7 @@ package nick.mirosh.repository
 
 import com.mongodb.*
 import com.mongodb.kotlin.client.coroutine.MongoClient
+import com.mongodb.kotlin.client.coroutine.MongoCollection
 import nick.mirosh.COLLECTION_NAME
 import nick.mirosh.DATABASE_NAME
 import nick.mirosh.MONGO_DB_CONNECTION_STRING
@@ -15,10 +16,9 @@ interface TransactionRepo {
 
 class TransactionRepoImpl : TransactionRepo {
 
-    val client = createMongoClient()
+    val collection = createMongoClient()
+
     override suspend fun createTransaction(transaction: Transaction): Result<Transaction> {
-        val database = client.getDatabase(DATABASE_NAME)
-        val collection = database.getCollection<Transaction>(COLLECTION_NAME)
         return try {
             val result = collection.insertOne(transaction)
             println("Success! Inserted document id: " + result.insertedId)
@@ -34,7 +34,7 @@ class TransactionRepoImpl : TransactionRepo {
         TODO("Not yet implemented")
     }
 
-    private fun createMongoClient(): MongoClient {
+    private fun createMongoClient(): MongoCollection<Transaction> {
         val serverApi = ServerApi.builder()
             .version(ServerApiVersion.V1)
             .build()
@@ -42,6 +42,9 @@ class TransactionRepoImpl : TransactionRepo {
             .applyConnectionString(ConnectionString(MONGO_DB_CONNECTION_STRING))
             .serverApi(serverApi)
             .build()
-        return MongoClient.create(mongoClientSettings)
+        val client = MongoClient.create(mongoClientSettings)
+
+        val database = client.getDatabase(DATABASE_NAME)
+        return database.getCollection<Transaction>(COLLECTION_NAME)
     }
 }
