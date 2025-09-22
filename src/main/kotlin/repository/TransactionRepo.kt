@@ -9,10 +9,14 @@ import nick.mirosh.COLLECTION_NAME
 import nick.mirosh.DATABASE_NAME
 import nick.mirosh.MONGO_DB_CONNECTION_STRING
 import nick.mirosh.Transaction
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
-    suspend fun getCurrentWeeksTransactions(): List<Transaction>
+    suspend fun getCurrentWeekTransactions(): List<Transaction>
 }
 
 
@@ -32,23 +36,33 @@ class TransactionRepoImpl : TransactionRepo {
 
     }
 
-    override suspend fun getCurrentWeeksTransactions(): List<Transaction> {
-        val calendar = java.util.Calendar.getInstance()
-        calendar.set(java.util.Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
-        calendar.set(java.util.Calendar.MINUTE, 0)
-        calendar.set(java.util.Calendar.SECOND, 0)
-        calendar.set(java.util.Calendar.MILLISECOND, 0)
-        val startOfWeek = calendar.time
-        
-        calendar.add(java.util.Calendar.DAY_OF_WEEK, 7)
-        val endOfWeek = calendar.time
-        
+    override suspend fun getCurrentWeekTransactions(): List<Transaction> {
+
+        //Bangkok is 7 hours ahead of UTC - hardcode it for now
+        val zone = ZoneId.of("Asia/Bangkok")
+        val today = LocalDate.now(zone)
+
+        // Start of week (Monday 00:00)
+        val startOfWeekZdt = today
+            .with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            .atStartOfDay(zone)
+
+        // End of week (exclusive) = next Monday 00:00
+        val endOfWeekExclusiveZdt = startOfWeekZdt.plusDays(7)
+
+        // Convert both to UTC
+        val startUtc = startOfWeekZdt.withZoneSameInstant(ZoneOffset.UTC)
+        val endUtc = endOfWeekExclusiveZdt.withZoneSameInstant(ZoneOffset.UTC)
+
+        val startMillis = startUtc.toInstant().toEpochMilli() / 1000
+        val endMillisExclusive = endUtc.toInstant().toEpochMilli() / 1000
+        println("Start of week: $startMillis, end of week: $endMillisExclusive")
+
         val filter = Filters.and(
-            Filters.gte("date", startOfWeek),
-            Filters.lt("date", endOfWeek)
+            Filters.gte("utcDate", startMillis),
+            Filters.lt("utcDate", endMillisExclusive)
         )
-        
+
         return collection.find(filter).toList()
     }
 

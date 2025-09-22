@@ -24,7 +24,7 @@ fun parseUpdate(update: Update): Transaction {
 
     val sumText = parts[0]
     val currencyText = parts[1]
-    val category = parts.drop(2).joinToString(" ")
+    val categoryText = parts.drop(2).joinToString(" ")
     val description = if (parts.size > 3) parts.drop(3).joinToString(" ") else ""
 
     if (sumText.isBlank()) {
@@ -40,7 +40,7 @@ fun parseUpdate(update: Update): Transaction {
         throw IllegalArgumentException("Currency cannot be empty")
     }
 
-    if (category.isBlank()) {
+    if (categoryText.isBlank()) {
         throw IllegalArgumentException("Category cannot be empty")
     }
 
@@ -49,6 +49,14 @@ fun parseUpdate(update: Update): Transaction {
     } catch (e: NumberFormatException) {
         throw IllegalArgumentException("Invalid sum format: $sumText")
     }
+
+    val currency = determineCurrency(currencyText)
+    val category = determineCategory(categoryText)
+
+    return Transaction(ObjectId(), update.message.date, sum, currency, category, description)
+}
+
+private fun determineCurrency(currencyText: String): String {
 
     val bahtCurrencies = listOf("b", "baht", "thb", "bth", "бт", "бат", "б")
     val hryvnaCurrency = listOf("g", "grn", "uah", "грн", "гр", "г", "гривна")
@@ -60,5 +68,79 @@ fun parseUpdate(update: Update): Transaction {
     if (currency in hryvnaCurrency) {
         currency = "UAH"
     }
-    return Transaction(ObjectId(), update.message.date, sum, currency, category, description)
+    return currency
+}
+
+
+private fun determineCategory(categoryText: String): String {
+    val categoryText = categoryText.lowercase()
+
+    val coffeeKeywords = listOf("кофе", "coffee", "cofe", "cafe", "кофа", "кава", "коф")
+    val groceryKeywords = listOf(
+        "продукты",
+        "grocery",
+        "groceries",
+        "food",
+        "supermarket",
+        "market",
+        "shop",
+        "store",
+        "products",
+        "продукт",
+        "супермаркет",
+        "магазин",
+        "магаз",
+        "Японский",
+        "еда",
+        "закупка",
+        "покупки",
+        "прод",
+        "харчи",
+        "хавка"
+    )
+
+    val restaurantKeywords = listOf(
+        "рестораны",
+        "restaurant",
+        "resto",
+        "dining",
+        "dinner",
+        "lunch",
+        "eatery",
+        "bistro",
+        "fastfood",
+        "рест",
+        "ресторан",
+        "кафешка",
+        "закусочная",
+        "забегаловка",
+        "столовка",
+        "фастфуд"
+    )
+    val entertainmentKeywords = listOf(
+        "развлечения",
+        "entertainment",
+        "movie",
+        "cinema",
+        "film",
+        "theater",
+        "theatre",
+        "concert",
+        "show",
+        "club",
+        "party",
+        "fun",
+        "games",
+        "gaming",
+        "event",
+        "festival",
+        "кино"
+    )
+    return when (categoryText) {
+        in coffeeKeywords -> "coffee"
+        in groceryKeywords -> "grocery"
+        in restaurantKeywords -> "restaurant"
+        in entertainmentKeywords -> "entertainment"
+        else -> "other"
+    }
 }

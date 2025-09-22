@@ -20,16 +20,9 @@ class Bot : TelegramLongPollingBot() {
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
-
-
         val message = update.message
-
-
         if (message.isGroupMessage || message.isSuperGroupMessage) {
             updateListener?.invoke(update)
-        } else {
-            println("Not a group message or super group message")
-            println("message has photo = ${message.hasPhoto()} && message has text = ${message.hasText()}")
         }
 
     }
