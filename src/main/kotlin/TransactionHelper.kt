@@ -6,9 +6,11 @@ import org.telegram.telegrambots.meta.api.objects.Update
 fun parseUpdate(update: Update): Transaction {
 
     //https://en.wikipedia.org/wiki/IETF_language_tag
-    val langCode = update.message.from.languageCode
+    val message = update.message
+    val langCode = message.from.languageCode
 
-    val text = update.message.text
+    val text =
+        message.text ?: message.caption ?: throw IllegalArgumentException("No text or caption found")
     val parts = text.trim().split(" ")
 
     if (parts.size < 3) {

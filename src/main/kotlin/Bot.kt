@@ -22,9 +22,15 @@ class Bot : TelegramLongPollingBot() {
 
         val message = update.message
 
+
         if (message.isGroupMessage || message.isSuperGroupMessage) {
             updateListener?.invoke(update)
         }
+        else {
+            println("Not a group message or super group message")
+            println("message has photo = ${message.hasPhoto()} && message has text = ${message.hasText()}")
+        }
+
     }
 
     fun sendText(who: Long?, what: String) {

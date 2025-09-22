@@ -29,7 +29,10 @@ fun main() {
 
         runBlocking {
             val message = when (val result = repo.createTransaction(transaction)) {
-                is Result.Success -> "Зописав! Правильно? \n ${result.data}"
+                is Result.Success -> "Зописав! \n " +
+                        "cумма = ${result.data.sum} \n " +
+                        "категория = ${result.data.category} \n " +
+                        "валюта = ${result.data.currency} \n"
                 is Result.Error -> "Поняв, но не записав чет \n Error: ${result.throwable.message}"
             }
             bot.sendText(update.message.chatId, message)
