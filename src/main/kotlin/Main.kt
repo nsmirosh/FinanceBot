@@ -22,10 +22,12 @@ fun main() {
 
     CoroutineScope(Dispatchers.IO).launch {
         commandProcessor.report.collect { chatIdAndReport ->
-            val report = chatIdAndReport?.second
-            val chatId = chatIdAndReport?.first
-            val reportAsMessage = report?.joinToString("\n") ?: "No data available"
-            bot.sendText(chatId, reportAsMessage)
+            chatIdAndReport?.let {
+                val report = chatIdAndReport.second
+                val chatId = chatIdAndReport.first
+                val reportAsMessage = report.joinToString("\n")
+                bot.sendText(chatId, reportAsMessage)
+            }
         }
     }
 
