@@ -9,5 +9,5 @@ data class Transaction(
     val currency: String,
     val category: String,
     val description: String = "",
-    val userName: String
+    val userName: String? = ""
 )

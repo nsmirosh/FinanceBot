@@ -3,9 +3,8 @@ package nick.mirosh.repository
 import com.mongodb.*
 import com.mongodb.client.model.Filters
 import com.mongodb.kotlin.client.coroutine.MongoClient
-import com.mongodb.kotlin.client.coroutine.MongoCollection
+import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import kotlinx.coroutines.flow.toList
-import nick.mirosh.COLLECTION_NAME
 import nick.mirosh.DATABASE_NAME
 import nick.mirosh.MONGO_DB_CONNECTION_STRING
 import nick.mirosh.Transaction
@@ -17,16 +16,22 @@ import java.time.ZoneOffset
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
     suspend fun getCurrentWeekTransactions(): List<Transaction>
+    suspend fun setBudget()
 }
 
 
+const val TRANSACTIONS_COLLECTION_NAME = "transactions"
+const val BUDGETS_COLLECTION_NAME = "budgets"
+
 class TransactionRepoImpl : TransactionRepo {
 
-    val collection = createMongoClient()
+    val database = createMongoClient()
+    val transactions = database.getCollection<Transaction>(TRANSACTIONS_COLLECTION_NAME)
+    val budgets = database.getCollection<Budget>(BUDGETS_COLLECTION_NAME)
 
     override suspend fun createTransaction(transaction: Transaction): Result<Transaction> {
         return try {
-            val result = collection.insertOne(transaction)
+            val result = transactions.insertOne(transaction)
             println("Success! Inserted document id: " + result.insertedId)
             Result.Success(transaction)
         } catch (e: MongoException) {
@@ -46,6 +51,7 @@ class TransactionRepoImpl : TransactionRepo {
         val startOfWeekZdt = today
             .with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             .atStartOfDay(zone)
+        println("startOfWeekZdt: $startOfWeekZdt")
 
         // End of week (exclusive) = next Monday 00:00
         val endOfWeekExclusiveZdt = startOfWeekZdt.plusDays(7)
@@ -63,10 +69,10 @@ class TransactionRepoImpl : TransactionRepo {
             Filters.lt("utcDate", endMillisExclusive)
         )
 
-        return collection.find(filter).toList()
+        return transactions.find(filter).toList()
     }
 
-    private fun createMongoClient(): MongoCollection<Transaction> {
+    private fun createMongoClient(): MongoDatabase {
         val serverApi = ServerApi.builder()
             .version(ServerApiVersion.V1)
             .build()
@@ -76,7 +82,35 @@ class TransactionRepoImpl : TransactionRepo {
             .build()
         val client = MongoClient.create(mongoClientSettings)
 
-        val database = client.getDatabase(DATABASE_NAME)
-        return database.getCollection<Transaction>(COLLECTION_NAME)
+        return client.getDatabase(DATABASE_NAME)
+
+//        return database.getCollection<Transaction>(COLLECTION_NAME)
+    }
+
+
+    data class Budget(
+        val values: List<Pair<String, Int>>
+    )
+
+
+    override suspend fun setBudget() {
+
+        val budget = Budget(
+            listOf(
+                "Groceries" to 9000,
+                "Entertainment" to 0,
+                "Restaurants" to 200,
+                "Coffee" to 100
+            )
+        )
+
+        try {
+            val result = budgets.insertOne(budget)
+            println("Success! Inserted document id: " + result.insertedId)
+//            Result.Success(transaction)
+        } catch (e: MongoException) {
+            System.err.println("Unable to insert due to an error: $e")
+//            Result.Error(e)
+        }
     }
 }

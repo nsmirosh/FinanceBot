@@ -8,9 +8,8 @@ import kotlinx.coroutines.launch
 import nick.mirosh.repository.TransactionRepo
 import org.telegram.telegrambots.meta.api.objects.Message
 
-
-const val weeklyStatus = "weekly_status"
-const val defaultCurrency = "default_currency"
+const val WEEKLY_STATUS_COMMAND = "weekly_status"
+const val SET_BUDGET_COMMAND = "set_budget"
 
 class CommandProcessor(private val transactionRepo: TransactionRepo) {
 
@@ -20,31 +19,38 @@ class CommandProcessor(private val transactionRepo: TransactionRepo) {
     fun processCommand(message: Message) {
         val command = message.text.lowercase()
         val chatId = message.chatId
+
+        println("Processing command: $command")
         when {
-            command.contains(weeklyStatus) -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val transactions = transactionRepo.getCurrentWeekTransactions()
-                    transactions.forEach { println("transaction = $it") }
-
-                    val mapByCategory = transactions.groupBy { it.category }
-
-                    val report = mutableListOf<String>()
-                    for ((category, transactions) in mapByCategory) {
-                        val totalAmount = transactions.sumOf { it.sum }
-                        report.add("Category: $category, Total Amount: $totalAmount")
-                        println(" processCommand = Category: $category, Total Amount: $totalAmount")
-                    }
-                    _report.value = chatId to report
-                }
-            }
+            command.contains(WEEKLY_STATUS_COMMAND) -> getWeeklyStatus(chatId)
+            command.contains(SET_BUDGET_COMMAND) -> setBudget()
 
             else -> {
             }
         }
     }
 
+    private fun getWeeklyStatus(chatId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val transactions = transactionRepo.getCurrentWeekTransactions()
+            println("Transactions: $transactions")
 
-    private fun processDefaultCurrency() {
+            val mapByCategory = transactions.groupBy { it.category }
 
+            val report = mutableListOf<String>()
+            for ((category, transactions) in mapByCategory) {
+                val totalAmount = transactions.sumOf { it.sum }
+                report.add("Category: $category, Total Amount: $totalAmount")
+                println("Category: $category, Total Amount: $totalAmount")
+            }
+            report.add("Total: ${transactions.sumOf { it.sum }}")
+            _report.value = chatId to report
+        }
+    }
+
+    private fun setBudget() {
+        CoroutineScope(Dispatchers.IO).launch {
+            transactionRepo.setBudget()
+        }
     }
 }

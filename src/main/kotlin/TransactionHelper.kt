@@ -129,7 +129,7 @@ private fun determineCategory(categoryText: String): String {
     )
     return when (categoryText) {
         in coffeeKeywords -> "coffee"
-        in groceryKeywords -> "grocery"
+        in groceryKeywords -> "groceries"
         in restaurantKeywords -> "restaurant"
         in entertainmentKeywords -> "entertainment"
         else -> "other"
