@@ -50,10 +50,16 @@ fun main() {
 
         runBlocking {
             val message = when (val result = repo.createTransaction(transaction)) {
-                is Result.Success -> "Зописав! \n " +
-                        "cумма = ${result.data.sum} \n " +
-                        "категория = ${result.data.category} \n " +
-                        "валюта = ${result.data.currency} \n"
+
+                is Result.Success ->
+
+                    with(result.data) {
+                        "Зописав! \n " +
+                                "cумма = $sum \n " +
+                                "категория = $category \n " +
+                                "описание = $description \n " +
+                                "валюта = $currency \n"
+                    }
 
                 is Result.Error -> "Поняв, но не записав чет \n Error: ${result.throwable.message}"
             }
