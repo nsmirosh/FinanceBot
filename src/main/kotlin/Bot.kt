@@ -27,6 +27,17 @@ class Bot : TelegramLongPollingBot() {
 
     }
 
+
+    fun showMenu(who: Long?) {
+        val sm = SendMessage.builder().chatId(who.toString())
+            .text("Привет, я твой финансовый помощник").build()
+        try {
+            execute(sm)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun sendText(who: Long?, what: String) {
         val sm = SendMessage.builder().chatId(who.toString()).text(what).build()
         try {

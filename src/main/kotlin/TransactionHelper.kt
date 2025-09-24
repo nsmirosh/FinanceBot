@@ -6,6 +6,8 @@ import org.telegram.telegrambots.meta.api.objects.Update
 fun parseUpdate(update: Update): Transaction {
 
     //https://en.wikipedia.org/wiki/IETF_language_tag
+
+    val name = update.message.from.firstName
     val message = update.message
     val langCode = message.from.languageCode
 
@@ -23,25 +25,12 @@ fun parseUpdate(update: Update): Transaction {
     }
 
     val sumText = parts[0]
-    val currencyText = parts[1]
-    val categoryText = parts.drop(2).joinToString(" ")
-    val description = if (parts.size > 3) parts.drop(3).joinToString(" ") else ""
+    val secondArg = parts[1]
+    val categoryText = parts[2]
+    val description = if (parts.size > 3) parts.drop(3).toString() else ""
 
-    if (sumText.isBlank()) {
-        throw IllegalArgumentException(
-            when (langCode) {
-                "ru" -> "cумма не может быть пустой"
-                else -> "Sum cannot be empty"
-            }
-        )
-    }
-
-    if (currencyText.isBlank()) {
+    if (secondArg.isBlank()) {
         throw IllegalArgumentException("Currency cannot be empty")
-    }
-
-    if (categoryText.isBlank()) {
-        throw IllegalArgumentException("Category cannot be empty")
     }
 
     val sum = try {
@@ -50,10 +39,10 @@ fun parseUpdate(update: Update): Transaction {
         throw IllegalArgumentException("Invalid sum format: $sumText")
     }
 
-    val currency = determineCurrency(currencyText)
+    val currency = determineCurrency(secondArg)
     val category = determineCategory(categoryText)
 
-    return Transaction(ObjectId(), update.message.date, sum, currency, category, description)
+    return Transaction(ObjectId(), update.message.date, sum, currency, category, description, name)
 }
 
 private fun determineCurrency(currencyText: String): String {
@@ -103,6 +92,7 @@ private fun determineCategory(categoryText: String): String {
         "рестораны",
         "restaurant",
         "resto",
+        "rest",
         "dining",
         "dinner",
         "lunch",
@@ -112,6 +102,7 @@ private fun determineCategory(categoryText: String): String {
         "рест",
         "ресторан",
         "кафешка",
+        "кафурик",
         "закусочная",
         "забегаловка",
         "столовка",

@@ -9,7 +9,8 @@ import nick.mirosh.repository.TransactionRepo
 import org.telegram.telegrambots.meta.api.objects.Message
 
 
-const val weeklyStatus = "weeklystatus"
+const val weeklyStatus = "weekly_status"
+const val defaultCurrency = "default_currency"
 
 class CommandProcessor(private val transactionRepo: TransactionRepo) {
 
@@ -40,5 +41,10 @@ class CommandProcessor(private val transactionRepo: TransactionRepo) {
             else -> {
             }
         }
+    }
+
+
+    private fun processDefaultCurrency() {
+
     }
 }

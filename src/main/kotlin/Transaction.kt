@@ -8,5 +8,6 @@ data class Transaction(
     val sum: Double,
     val currency: String,
     val category: String,
-    val description: String = ""
+    val description: String = "",
+    val userName: String
 )
