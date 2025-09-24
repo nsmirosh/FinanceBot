@@ -38,11 +38,17 @@ class CommandProcessor(private val transactionRepo: TransactionRepo) {
             val mapByCategory = transactions.groupBy { it.category }
 
             val report = mutableListOf<String>()
+            report.add("----------------------------------------------")
+            report.add("|   Category   |   Total Amount   |")
+            report.add("----------------------------------------------")
+
             for ((category, transactions) in mapByCategory) {
                 val totalAmount = transactions.sumOf { it.sum }
-                report.add("Category: $category, Total Amount: $totalAmount")
-                println("Category: $category, Total Amount: $totalAmount")
+                val categoryFormatted = category.padStart((category.length + 12) / 2).padEnd(12)
+                val totalAmountFormatted = totalAmount.toString().padStart((totalAmount.toString().length + 16) / 2).padEnd(16)
+                report.add("| $categoryFormatted | $totalAmountFormatted |")
             }
+            report.add("----------------------------------------------")
             report.add("Total: ${transactions.sumOf { it.sum }}")
             _report.value = chatId to report
         }
