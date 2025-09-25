@@ -1,0 +1,4 @@
+
+
+[ ] show how much money is left = budget - current weekly status
+[ ] allow to delete / change the transaction after it was already posted via a button

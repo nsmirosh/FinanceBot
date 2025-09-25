@@ -13,10 +13,15 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 
+data class Budgets(
+    val values: List<Pair<String, Int>>
+)
+
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
     suspend fun getCurrentWeekTransactions(): List<Transaction>
     suspend fun setBudget()
+    suspend fun getMonthlyBudgets(): Budgets
 }
 
 
@@ -27,7 +32,7 @@ class TransactionRepoImpl : TransactionRepo {
 
     val database = createMongoClient()
     val transactions = database.getCollection<Transaction>(TRANSACTIONS_COLLECTION_NAME)
-    val budgets = database.getCollection<Budget>(BUDGETS_COLLECTION_NAME)
+    val budgets = database.getCollection<Budgets>(BUDGETS_COLLECTION_NAME)
 
     override suspend fun createTransaction(transaction: Transaction): Result<Transaction> {
         return try {
@@ -88,29 +93,30 @@ class TransactionRepoImpl : TransactionRepo {
     }
 
 
-    data class Budget(
-        val values: List<Pair<String, Int>>
-    )
 
 
     override suspend fun setBudget() {
 
-        val budget = Budget(
+        val budgets = Budgets(
             listOf(
-                "Groceries" to 9000,
+                "Groceries" to 29000,
                 "Entertainment" to 0,
-                "Restaurants" to 200,
-                "Coffee" to 100
+                "Restaurants" to 6450,
+                "Coffee" to 3200
             )
         )
 
         try {
-            val result = budgets.insertOne(budget)
+            val result = this@TransactionRepoImpl.budgets.insertOne(budgets)
             println("Success! Inserted document id: " + result.insertedId)
 //            Result.Success(transaction)
         } catch (e: MongoException) {
             System.err.println("Unable to insert due to an error: $e")
 //            Result.Error(e)
         }
+    }
+
+    override suspend fun getMonthlyBudgets(): Budgets {
+        return budgets.find().toList().last()
     }
 }

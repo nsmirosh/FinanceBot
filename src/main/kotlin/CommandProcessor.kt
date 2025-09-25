@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nick.mirosh.repository.TransactionRepo
 import org.telegram.telegrambots.meta.api.objects.Message
+import java.time.LocalDate
+import java.time.ZoneId
 
 const val WEEKLY_STATUS_COMMAND = "weekly_status"
 const val SET_BUDGET_COMMAND = "set_budget"
@@ -33,25 +35,69 @@ class CommandProcessor(private val transactionRepo: TransactionRepo) {
     private fun getWeeklyStatus(chatId: Long) {
         CoroutineScope(Dispatchers.IO).launch {
             val transactions = transactionRepo.getCurrentWeekTransactions()
-            println("Transactions: $transactions")
+            val budgets = transactionRepo.getMonthlyBudgets()
+            val weeksInMonth = getWeeksInCurrentMonth()
+
 
             val mapByCategory = transactions.groupBy { it.category }
 
             val report = mutableListOf<String>()
-            report.add("----------------------------------------------")
-            report.add("|   Category   |   Total Amount   |")
-            report.add("----------------------------------------------")
+            report.add("Weekly Status Report:")
+            report.add("This month has ${"%.2f".format(weeksInMonth)} weeks")
+            report.add("-------------------------------------")
+            val categoryHeader = "    Category    "
+            val totalAmountHeader = " Total "
+            val monthlyBudget = "Monthly Budget"
+            val moneyLeftForTheWeek = " For This Week "
+            report.add("|$categoryHeader|$totalAmountHeader|$monthlyBudget|$moneyLeftForTheWeek|")
+            report.add("-------------------------------------")
 
             for ((category, transactions) in mapByCategory) {
                 val totalAmount = transactions.sumOf { it.sum }
-                val categoryFormatted = category.padStart((category.length + 12) / 2).padEnd(12)
-                val totalAmountFormatted = totalAmount.toString().padStart((totalAmount.toString().length + 16) / 2).padEnd(16)
-                report.add("| $categoryFormatted | $totalAmountFormatted |")
+                val totalAmountLength = totalAmount.toString().length
+
+                val categoryPaddingNeededForEachSide = (categoryHeader.length - category.length) / 2
+                val categoryFormatted = if (categoryPaddingNeededForEachSide > 0) {
+                    category
+                        .padStart(category.length + categoryPaddingNeededForEachSide).let {
+                            it.padEnd(it.length + categoryPaddingNeededForEachSide)
+                        }
+                } else category
+
+
+                val totalAmountPaddingNeededForEachSide = (totalAmountHeader.length - totalAmountLength) / 2
+                val totalAmountFormatted = if (totalAmountPaddingNeededForEachSide > 0)
+                    totalAmount.toString()
+                        .padStart(totalAmountPaddingNeededForEachSide)
+                        .padEnd(totalAmountPaddingNeededForEachSide)
+                else totalAmount.toString()
+
+
+                var moneysLeftForTheWeek: String? = null
+                val budget = budgets.values.firstOrNull { it.first.uppercase() == category.uppercase() }?.let {
+//                    moneysLeftForTheWeek = (it.second  / weeksInMonth) - totalAmount
+                    it.second.toString()
+                } ?: "No budget"
+
+//                moneysLeftForTheWeek = moneysLeftForTheWeek?.let { "%.2f".format(it.toFloat()) } ?: "No budget"
+
+                report.add(
+                    "| $categoryFormatted | $totalAmountFormatted | $budget | $moneysLeftForTheWeek |"
+                )
             }
-            report.add("----------------------------------------------")
+            report.add("-------------------------------------")
             report.add("Total: ${transactions.sumOf { it.sum }}")
             _report.value = chatId to report
         }
+    }
+
+    private fun getWeeksInCurrentMonth(): Float {
+        val zone = ZoneId.of("Asia/Bangkok")
+        val today = LocalDate.now(zone)
+        val lastOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+
+        val totalDaysInMonth = lastOfMonth.dayOfMonth
+        return totalDaysInMonth / 7.0f
     }
 
     private fun setBudget() {
