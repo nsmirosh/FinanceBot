@@ -1,76 +1,56 @@
 package nick.mirosh
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 
-class Bot : TelegramLongPollingBot() {
+class Bot(
+    private val commandManager: CommandManager,
+    private val transactionManager: TransactionManager
+) : TelegramLongPollingBot() {
+
+    init {
+        listenForCommandResults()
+    }
 
     override fun getBotUsername(): String? {
         return "Финансовый помощник Асеньки и Коленьки"
     }
-
-    private var updateListener: ((Update) -> Unit)? = null
-
-    fun onUpdateListener(listener: (Update) -> Unit) {
-        this.updateListener = listener
-    }
-
 
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
         val message = update.message
         if (message.isGroupMessage || message.isSuperGroupMessage) {
-            updateListener?.invoke(update)
+            if (message.isCommand) {
+                commandManager.processCommand(message)
+            } else {
+                transactionManager.processTransaction(update)
+            }
         }
-//        showMenuOptions(update)
-
     }
 
-
-    private fun showMenuOptions(update: Update) {
-         when {
-            update.hasMessage() && update.message.hasText() &&
-                    update.message.text == "/set_default_currency" -> {
-                sendOptions(update.message.chatId)
-            }
-
-            update.hasCallbackQuery() -> {
-                val cq = update.callbackQuery
-                val choice = when (cq.data) {
-                    "opt_A" -> "Option A"
-                    "opt_B" -> "Option B"
-                    else -> "Unknown"
+    private fun listenForCommandResults() {
+        CoroutineScope(Dispatchers.IO).launch {
+            commandManager.report.collect { chatIdAndReport ->
+                chatIdAndReport?.let {
+                    val report = chatIdAndReport.second
+                    val chatId = chatIdAndReport.first
+                    val reportAsMessage = report.joinToString("\n")
+                    sendText(chatId, reportAsMessage)
                 }
-                println("choice: $choice")
-
-                // A. Edit the original message to show selection:
-//                execute(
-//                    EditMessageText(
-//                        cq.message.chatId.toString(),
-//                        cq.message.messageId,
-//                        "You chose: $choice"
-//                    )
-//                )
-
-                // (Or B. send a new message instead of editing)
-                // execute(SendMessage(cq.message.chatId.toString(), "You chose: $choice"))
             }
         }
-    }
 
-
-    fun showMenu(who: Long?) {
-        val sm = SendMessage.builder().chatId(who.toString())
-            .text("Привет, я твой финансовый помощник").build()
-        try {
-            execute(sm)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        CoroutineScope(Dispatchers.IO).launch {
+            transactionManager.message.collect { chatIdAndMessage ->
+                chatIdAndMessage?.let {
+                    sendText(it.first, it.second)
+                }
+            }
         }
     }
 
@@ -81,21 +61,5 @@ class Bot : TelegramLongPollingBot() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-
-    //https://stackoverflow.com/questions/32423837/telegram-bot-how-to-get-a-group-chat-id
-
-    //https://core.telegram.org/bots/tutorial#introduction
-    private fun sendOptions(chatId: Long) {
-        val buttons = listOf(
-            listOf(InlineKeyboardButton("Option A").apply { callbackData = "opt_A" }),
-            listOf(InlineKeyboardButton("Option B").apply { callbackData = "opt_B" })
-        )
-        val markup = InlineKeyboardMarkup(buttons)
-
-        val msg = SendMessage(chatId.toString(), "Please send me a 3 character currency code you want to be a default one")
-        msg.replyMarkup = markup
-        execute(msg)
     }
 }

@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("jvm") version "2.1.20"
     application
@@ -14,6 +13,8 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation("org.telegram:telegrambots:6.0.1")
+    implementation(project.dependencies.platform("io.insert-koin:koin-bom:4.1.0"))
+    implementation("io.insert-koin:koin-core")
     implementation("io.ktor:ktor-client-core:3.3.0")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation(platform("org.mongodb:mongodb-driver-bom:5.5.1"))

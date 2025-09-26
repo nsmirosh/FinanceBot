@@ -13,7 +13,7 @@ import java.time.ZoneId
 const val WEEKLY_STATUS_COMMAND = "weekly_status"
 const val SET_BUDGET_COMMAND = "set_budget"
 
-class CommandProcessor(private val transactionRepo: TransactionRepo) {
+class CommandManager(private val transactionRepo: TransactionRepo) {
 
     private val _report = MutableStateFlow<Pair<Long, List<String>>?>(null)
     val report = _report.asStateFlow()
@@ -37,6 +37,9 @@ class CommandProcessor(private val transactionRepo: TransactionRepo) {
             val transactions = transactionRepo.getCurrentWeekTransactions()
             val budgets = transactionRepo.getMonthlyBudgets()
             val weeksInMonth = getWeeksInCurrentMonth()
+
+
+            //TODO get transaction for the week only for week status
 
 
             val mapByCategory = transactions.groupBy { it.category }
