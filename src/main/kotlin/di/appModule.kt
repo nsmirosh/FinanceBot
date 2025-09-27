@@ -25,5 +25,4 @@ val appModule = module {
         api.registerBot(get())
         api
     }
-
 }

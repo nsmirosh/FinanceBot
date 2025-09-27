@@ -2,3 +2,13 @@
 
 [ ] show how much money is left = budget - current weekly status
 [ ] allow to delete / change the transaction after it was already posted via a button
+
+[ ] pin chat message
+    at the start of the week
+    https://chatgpt.com/c/68d80a2f-613c-8322-b3e2-eef0efb75cfd
+
+   https://crontab.guru/#5_4_25_*_*
+    - notify the chat as to what's the budget fo reach category left for the week (and this budget sticks until next week)
+
+
+[ ] connect an API for converting currencies
