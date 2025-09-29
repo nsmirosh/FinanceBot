@@ -81,7 +81,7 @@ class CommandManager(private val transactionRepo: TransactionRepo) {
 
     private fun setBudget() {
         CoroutineScope(Dispatchers.IO).launch {
-            transactionRepo.setBudget()
+            transactionRepo.setHardCodedBudgets()
         }
     }
 

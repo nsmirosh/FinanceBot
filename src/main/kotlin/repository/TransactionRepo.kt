@@ -28,7 +28,7 @@ data class Budget(
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
     suspend fun getCurrentWeekTransactions(): List<Transaction>
-    suspend fun setBudget()
+    suspend fun setHardCodedBudgets()
     suspend fun setBudget(budget: Budget): Result<Unit>
     suspend fun getBudgets(): List<Budget>
 
@@ -103,9 +103,10 @@ class TransactionRepoImpl : TransactionRepo {
     }
 
 
-    override suspend fun setBudget() {
+    override suspend fun setHardCodedBudgets() {
 
         val weeksInCurrentMonth = weekInCurrentMonth()
+        println("Weeks in current month: $weeksInCurrentMonth")
 
         val groceriesBudget = 2900000
         val restaurantsBudget = 645000
