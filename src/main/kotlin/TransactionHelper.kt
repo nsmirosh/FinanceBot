@@ -32,10 +32,9 @@ fun parseUpdate(update: Update): Transaction {
     if (secondArg.isBlank()) {
         throw IllegalArgumentException("Currency cannot be empty")
     }
-
     val sum = try {
-        sumText.toDouble()
-    } catch (e: NumberFormatException) {
+        parseSumText(sumText)
+    } catch (e: Exception) {
         throw IllegalArgumentException("Invalid sum format: $sumText")
     }
 
@@ -44,6 +43,29 @@ fun parseUpdate(update: Update): Transaction {
 
     return Transaction(ObjectId(), update.message.date, sum, currency, category, description, name)
 }
+
+fun parseSumText(sumText: String): Int =
+    if (sumText.contains(".")) {
+        val parts = sumText.split(".")
+        if (parts.size != 2) {
+            throw IllegalArgumentException("Invalid sum format: $sumText")
+        }
+        val integerPart = parts[0].toInt()
+        val cents = parts[1].toInt()
+        integerPart * 100 + cents
+    } else {
+        sumText.toInt() * 100
+    }
+
+
+fun parseIntToText(amount: Int): String {
+    if (amount == 0) return "0.00"
+
+    val integerPart = amount / 100
+    val centsPart = amount % 100
+    return if (centsPart < 10) "$integerPart.0$centsPart" else "$integerPart.$centsPart"
+}
+
 
 private fun determineCurrency(currencyText: String): String {
 

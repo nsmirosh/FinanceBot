@@ -33,7 +33,7 @@ class TransactionManager(
 
                     with(result.data) {
                         "Зописав! \n " +
-                                "cумма = $sum \n " +
+                                "cумма = ${sum / 100} \n " +
                                 "категория = $category \n " +
                                 "описание = $description \n " +
                                 "валюта = $currency \n"

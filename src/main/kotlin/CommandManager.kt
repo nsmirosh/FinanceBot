@@ -34,67 +34,43 @@ class CommandManager(private val transactionRepo: TransactionRepo) {
 
     private fun getWeeklyStatus(chatId: Long) {
         CoroutineScope(Dispatchers.IO).launch {
-            val transactions = transactionRepo.getCurrentWeekTransactions()
-            val budgets = transactionRepo.getMonthlyBudgets()
+            val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
+            val budgets = transactionRepo.getBudgets()
             val weeksInMonth = getWeeksInCurrentMonth()
 
-
-            //TODO get transaction for the week only for week status
-
-
-            val mapByCategory = transactions.groupBy { it.category }
+            val mapByCategory = weeklyTransactions.groupBy { it.category }
 
             val report = mutableListOf<String>()
             report.add("Weekly Status Report:")
             report.add("This month has ${"%.2f".format(weeksInMonth)} weeks")
             report.add("-------------------------------------")
             val categoryHeader = "    Category    "
-            val totalAmountHeader = " Total "
-            val monthlyBudget = "Monthly Budget"
-            val moneyLeftForTheWeek = " For This Week "
-            report.add("|$categoryHeader|$totalAmountHeader|$monthlyBudget|$moneyLeftForTheWeek|")
+            val weeklyBudgetHeader = " Weekly Budget "
+            val moneyLeftForTheWeekHeader = " Money Left "
+            report.add("|$categoryHeader|$weeklyBudgetHeader|$moneyLeftForTheWeekHeader|")
             report.add("-------------------------------------")
 
             for ((category, transactions) in mapByCategory) {
-                val totalAmount = transactions.sumOf { it.sum }
-                val totalAmountLength = totalAmount.toString().length
+                val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
+                val budget =
+                    budgets.firstOrNull { it.category.uppercase() == category.uppercase() }?.amountForCurrentWeek ?: 0
+                val moneyLeft = budget - totalMoneySpentForTheWeek
+                println("moneyLeft = $moneyLeft")
 
-                val categoryPaddingNeededForEachSide = (categoryHeader.length - category.length) / 2
-                val categoryFormatted = if (categoryPaddingNeededForEachSide > 0) {
-                    category
-                        .padStart(category.length + categoryPaddingNeededForEachSide).let {
-                            it.padEnd(it.length + categoryPaddingNeededForEachSide)
-                        }
-                } else category
-
-
-                val totalAmountPaddingNeededForEachSide = (totalAmountHeader.length - totalAmountLength) / 2
-                val totalAmountFormatted = if (totalAmountPaddingNeededForEachSide > 0)
-                    totalAmount.toString()
-                        .padStart(totalAmountPaddingNeededForEachSide)
-                        .padEnd(totalAmountPaddingNeededForEachSide)
-                else totalAmount.toString()
-
-
-                var moneysLeftForTheWeek: String? = null
-                val budget = budgets.values.firstOrNull { it.first.uppercase() == category.uppercase() }?.let {
-//                    moneysLeftForTheWeek = (it.second  / weeksInMonth) - totalAmount
-                    it.second.toString()
-                } ?: "No budget"
-
-//                moneysLeftForTheWeek = moneysLeftForTheWeek?.let { "%.2f".format(it.toFloat()) } ?: "No budget"
+                val moneyLeftFormatted = parseIntToText(moneyLeft)
+                val budgetFormatted = parseIntToText(budget)
 
                 report.add(
-                    "| $categoryFormatted | $totalAmountFormatted | $budget | $moneysLeftForTheWeek |"
+                    "| $category | $budgetFormatted | $moneyLeftFormatted |"
                 )
             }
             report.add("-------------------------------------")
-            report.add("Total: ${transactions.sumOf { it.sum }}")
+            report.add("Total spent: ${parseIntToText(weeklyTransactions.sumOf { it.sum })}")
             _report.value = chatId to report
         }
     }
 
-    private fun getWeeksInCurrentMonth(): Float {
+    fun getWeeksInCurrentMonth(): Float {
         val zone = ZoneId.of("Asia/Bangkok")
         val today = LocalDate.now(zone)
         val lastOfMonth = today.withDayOfMonth(today.lengthOfMonth())
@@ -108,4 +84,25 @@ class CommandManager(private val transactionRepo: TransactionRepo) {
             transactionRepo.setBudget()
         }
     }
+
+//    private fun formatting() {
+//
+//        val totalAmountLength = totalAmount.toString().length
+//
+//        val categoryPaddingNeededForEachSide = (categoryHeader.length - category.length) / 2
+//        val categoryFormatted = if (categoryPaddingNeededForEachSide > 0) {
+//            category
+//                .padStart(category.length + categoryPaddingNeededForEachSide).let {
+//                    it.padEnd(it.length + categoryPaddingNeededForEachSide)
+//                }
+//        } else category
+//
+//
+//        val totalAmountPaddingNeededForEachSide = (totalAmountHeader.length - totalAmountLength) / 2
+//        val totalAmountFormatted = if (totalAmountPaddingNeededForEachSide > 0)
+//            totalAmount.toString()
+//                .padStart(totalAmountPaddingNeededForEachSide)
+//                .padEnd(totalAmountPaddingNeededForEachSide)
+//        else totalAmount.toString()
+//    }
 }

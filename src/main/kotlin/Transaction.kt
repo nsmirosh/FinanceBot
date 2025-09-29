@@ -5,7 +5,7 @@ import org.bson.types.ObjectId
 data class Transaction(
     @BsonId val id: ObjectId,
     val utcDate: Int,
-    val sum: Double,
+    val sum: Int,
     val currency: String,
     val category: String,
     val description: String = "",

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.toList
 import nick.mirosh.DATABASE_NAME
 import nick.mirosh.MONGO_DB_CONNECTION_STRING
 import nick.mirosh.Transaction
+import utils.weekInCurrentMonth
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
@@ -17,11 +18,20 @@ data class Budgets(
     val values: List<Pair<String, Int>>
 )
 
+data class Budget(
+    val category: String,
+    val amountForMonth: Int,
+    val amountForCurrentWeek: Int
+)
+
+
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
     suspend fun getCurrentWeekTransactions(): List<Transaction>
     suspend fun setBudget()
-    suspend fun getMonthlyBudgets(): Budgets
+    suspend fun setBudget(budget: Budget): Result<Unit>
+    suspend fun getBudgets(): List<Budget>
+
 }
 
 
@@ -32,7 +42,7 @@ class TransactionRepoImpl : TransactionRepo {
 
     val database = createMongoClient()
     val transactions = database.getCollection<Transaction>(TRANSACTIONS_COLLECTION_NAME)
-    val budgets = database.getCollection<Budgets>(BUDGETS_COLLECTION_NAME)
+    val budgets = database.getCollection<Budget>(BUDGETS_COLLECTION_NAME)
 
     override suspend fun createTransaction(transaction: Transaction): Result<Transaction> {
         return try {
@@ -93,22 +103,23 @@ class TransactionRepoImpl : TransactionRepo {
     }
 
 
-
-
     override suspend fun setBudget() {
 
-        val budgets = Budgets(
-            listOf(
-                "Groceries" to 29000,
-                "Entertainment" to 0,
-                "Restaurants" to 6450,
-                "Coffee" to 3200
-            )
-        )
+        val weeksInCurrentMonth = weekInCurrentMonth()
 
+        val groceriesBudget = 2900000
+        val restaurantsBudget = 645000
+        val coffeeBudget = 320000
+
+        val budgets = listOf(
+            Budget("Groceries", groceriesBudget, (groceriesBudget / weeksInCurrentMonth).toInt()),
+            Budget("Entertainment", 0, 0),
+            Budget("Restaurants", restaurantsBudget, (restaurantsBudget / weeksInCurrentMonth).toInt()),
+            Budget("Coffee", coffeeBudget, (coffeeBudget / weeksInCurrentMonth).toInt())
+        )
         try {
-            val result = this@TransactionRepoImpl.budgets.insertOne(budgets)
-            println("Success! Inserted document id: " + result.insertedId)
+            val result = this@TransactionRepoImpl.budgets.insertMany(budgets)
+            println("Success! Inserted document id: " + result.insertedIds)
 //            Result.Success(transaction)
         } catch (e: MongoException) {
             System.err.println("Unable to insert due to an error: $e")
@@ -116,7 +127,18 @@ class TransactionRepoImpl : TransactionRepo {
         }
     }
 
-    override suspend fun getMonthlyBudgets(): Budgets {
-        return budgets.find().toList().last()
+    override suspend fun setBudget(budget: Budget): Result<Unit> =
+        try {
+            val result = this@TransactionRepoImpl.budgets.insertOne(budget)
+            println("Success! Inserted document id: " + result.insertedId)
+            Result.Success(Unit)
+        } catch (e: MongoException) {
+            System.err.println("Unable to insert due to an error: $e")
+            Result.Error(e)
+        }
+
+
+    override suspend fun getBudgets(): List<Budget> {
+        return budgets.find().toList()
     }
 }
