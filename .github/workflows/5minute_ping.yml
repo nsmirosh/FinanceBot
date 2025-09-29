@@ -11,5 +11,5 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.CHAT_ID }}" \
-            -d text="5 minute ping 🎉" \
+            -d text="5 minute ping не обращайтэ внимание🎉" \
             -d parse_mode="Markdown"
