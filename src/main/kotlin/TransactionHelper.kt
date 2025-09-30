@@ -1,7 +1,10 @@
 package nick.mirosh
 
+import nick.mirosh.utils.Category
 import org.bson.types.ObjectId
 import org.telegram.telegrambots.meta.api.objects.Update
+import nick.mirosh.utils.Category.*
+import nick.mirosh.utils.TriggerKeyWords
 
 fun parseUpdate(update: Update): Transaction {
 
@@ -83,77 +86,23 @@ private fun determineCurrency(currencyText: String): String {
 }
 
 
-private fun determineCategory(categoryText: String): String {
+private fun determineCategory(categoryText: String): Category {
     val categoryText = categoryText.lowercase()
 
-    val coffeeKeywords = listOf("кофе", "coffee", "cofe", "cafe", "кофа", "кава", "коф")
-    val groceryKeywords = listOf(
-        "продукты",
-        "grocery",
-        "groceries",
-        "food",
-        "supermarket",
-        "market",
-        "shop",
-        "store",
-        "products",
-        "продукт",
-        "супермаркет",
-        "магазин",
-        "магаз",
-        "Японский",
-        "еда",
-        "закупка",
-        "покупки",
-        "прод",
-        "харчи",
-        "хавка"
-    )
-
-    val restaurantKeywords = listOf(
-        "рестораны",
-        "restaurant",
-        "resto",
-        "rest",
-        "dining",
-        "dinner",
-        "lunch",
-        "eatery",
-        "bistro",
-        "fastfood",
-        "рест",
-        "ресторан",
-        "кафешка",
-        "кафурик",
-        "закусочная",
-        "забегаловка",
-        "столовка",
-        "фастфуд"
-    )
-    val entertainmentKeywords = listOf(
-        "развлечения",
-        "entertainment",
-        "movie",
-        "cinema",
-        "film",
-        "theater",
-        "theatre",
-        "concert",
-        "show",
-        "club",
-        "party",
-        "fun",
-        "games",
-        "gaming",
-        "event",
-        "festival",
-        "кино"
-    )
-    return when (categoryText) {
-        in coffeeKeywords -> "coffee"
-        in groceryKeywords -> "groceries"
-        in restaurantKeywords -> "restaurant"
-        in entertainmentKeywords -> "entertainment"
-        else -> "other"
+    with(TriggerKeyWords) {
+        return when (categoryText) {
+            in coffeeKeywords -> COFFEE
+            in groceryKeywords -> GROCERIES
+            in restaurantKeywords -> RESTAURANTS
+            in entertainmentKeywords -> ENTERTAINMENT
+            in utilities -> UTILITIES
+            in healthKeywords -> HEALTH
+            in subscriptionKeywords -> SUBSCRIPTIONS
+            in houseKeywords -> HOUSE
+            in clothesKeywords -> CLOTHES
+            in transportKeywords -> TRANSPORT
+            in educationKeywords -> EDUCATION
+            else -> OTHER
+        }
     }
 }

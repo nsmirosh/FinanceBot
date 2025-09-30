@@ -8,18 +8,16 @@ import kotlinx.coroutines.flow.toList
 import nick.mirosh.DATABASE_NAME
 import nick.mirosh.MONGO_DB_CONNECTION_STRING
 import nick.mirosh.Transaction
+import nick.mirosh.utils.Category
 import utils.weekInCurrentMonth
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-
-data class Budgets(
-    val values: List<Pair<String, Int>>
-)
+import nick.mirosh.utils.Category.*
 
 data class Budget(
-    val category: String,
+    val category: Category,
     val amountForMonth: Int,
     val amountForCurrentWeek: Int
 )
@@ -99,7 +97,6 @@ class TransactionRepoImpl : TransactionRepo {
 
         return client.getDatabase(DATABASE_NAME)
 
-//        return database.getCollection<Transaction>(COLLECTION_NAME)
     }
 
 
@@ -108,15 +105,26 @@ class TransactionRepoImpl : TransactionRepo {
         val weeksInCurrentMonth = weekInCurrentMonth()
         println("Weeks in current month: $weeksInCurrentMonth")
 
+       //In thai baht cents
         val groceriesBudget = 2900000
         val restaurantsBudget = 645000
         val coffeeBudget = 320000
+        val education = 620000
+        val utilities = 760000
+        val transport = 162000
+        val subscriptions = 250000
+        val health = 1000000
 
         val budgets = listOf(
-            Budget("Groceries", groceriesBudget, (groceriesBudget / weeksInCurrentMonth).toInt()),
-            Budget("Entertainment", 0, 0),
-            Budget("Restaurants", restaurantsBudget, (restaurantsBudget / weeksInCurrentMonth).toInt()),
-            Budget("Coffee", coffeeBudget, (coffeeBudget / weeksInCurrentMonth).toInt())
+            Budget(GROCERIES, groceriesBudget, (groceriesBudget / weeksInCurrentMonth).toInt()),
+            Budget(ENTERTAINMENT, 0, 0),
+            Budget(RESTAURANTS, restaurantsBudget, (restaurantsBudget / weeksInCurrentMonth).toInt()),
+            Budget(COFFEE, coffeeBudget, (coffeeBudget / weeksInCurrentMonth).toInt()),
+            Budget(EDUCATION, education, (education / weeksInCurrentMonth).toInt()),
+            Budget(UTILITIES, utilities, (utilities / weeksInCurrentMonth).toInt()),
+            Budget(TRANSPORT, transport, (transport / weeksInCurrentMonth).toInt()),
+            Budget(SUBSCRIPTIONS, subscriptions, (subscriptions / weeksInCurrentMonth).toInt()),
+            Budget(HEALTH, health, (health / weeksInCurrentMonth).toInt())
         )
         try {
             val result = this@TransactionRepoImpl.budgets.insertMany(budgets)

@@ -53,7 +53,7 @@ class CommandManager(private val transactionRepo: TransactionRepo) {
             for ((category, transactions) in mapByCategory) {
                 val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
                 val budget =
-                    budgets.firstOrNull { it.category.uppercase() == category.uppercase() }?.amountForCurrentWeek ?: 0
+                    budgets.firstOrNull { it.category == category }?.amountForCurrentWeek ?: 0
                 val moneyLeft = budget - totalMoneySpentForTheWeek
                 println("moneyLeft = $moneyLeft")
 
