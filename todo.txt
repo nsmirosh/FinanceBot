@@ -1,7 +1,15 @@
 
 
-[ ] show how much money is left = budget - current weekly status
+[x] show how much money is left = budget - current weekly status
+
+This is more important for accuracy right now ->
+
+[ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
+
 [ ] create a proper chart for categories
+
+[ ] if the category cannot be recognized - DO NOT discard the first word - put it into the description.
+[ ] show the current status with a graph - https://quickchart.io/
 
     [ ] fixate the budget for the week at the start of the week
         [ ] run cron job
