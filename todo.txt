@@ -1,6 +1,7 @@
 
 
 [ ] show how much money is left = budget - current weekly status
+[ ] create a proper chart for categories
 
     [ ] fixate the budget for the week at the start of the week
         [ ] run cron job
