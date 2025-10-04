@@ -10,6 +10,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import nick.mirosh.BOT_TOKEN
+import nick.mirosh.repository.Budget
 
 
 @Serializable
@@ -68,7 +69,10 @@ data class Dataset(
 )
 
 
-fun buildChartRequestBody() =
+fun buildChartRequestBody(
+    moneyLeftInCents: Int,
+    budget: Budget
+) =
     Chart(
         type = "bar",
         data = ChartData(
@@ -77,13 +81,13 @@ fun buildChartRequestBody() =
                 Dataset(
                     backgroundColor = "#8ac926",
                     label = "Money Left",
-                    data = listOf(80)
+                    data = listOf(moneyLeftInCents / 100)
                 ),
 
                 Dataset(
-                    backgroundColor = "#8ac926",
-                    label = "Money Not Left",
-                    data = listOf(60)
+                    backgroundColor = "#ffb703",
+                    label = "Budget",
+                    data = listOf(budget.amountForCurrentWeek)
                 )
             )
         ),
@@ -92,7 +96,7 @@ fun buildChartRequestBody() =
             plugins = Plugins(
                 title = Title(
                     display = true,
-                    text = "Coffee"
+                    text = budget.category.name
                 )
             )
         )
@@ -101,18 +105,21 @@ fun buildChartRequestBody() =
 
 class TelegramApiManager(private val httpClient: HttpClient) {
 
-    fun sendPhoto(chatId: String) {
+    fun sendPhoto(
+        chatId: String,
+        moneyLeftInCentsForCategory: Int,
+        budget: Budget
+    ) {
         val pictureUrl = buildUrl {
             protocol = URLProtocol.HTTPS
             host = "quickchart.io"
             path("chart")
             parameters.append("v", "4")
-
             parameters.append(
                 "c",
                 Json.encodeToString(
                     Chart.serializer(),
-                    buildChartRequestBody()
+                    buildChartRequestBody(moneyLeftInCentsForCategory, budget)
                 )
             )
         }
@@ -124,7 +131,7 @@ class TelegramApiManager(private val httpClient: HttpClient) {
                     path("bot$BOT_TOKEN/sendPhoto")
                 }
                 contentType(
-                    io.ktor.http.ContentType.Application.Json
+                    ContentType.Application.Json
                 )
                 setBody(
                     TelegramRequestBody(

@@ -24,8 +24,10 @@ class Bot(
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
+        println(update)
         val message = update.message
-        if (message.isGroupMessage || message.isSuperGroupMessage) {
+        //TODO do I even need these checks?
+        if (message.isGroupMessage || message.isSuperGroupMessage || message.isUserMessage) {
             if (message.isCommand) {
                 commandManager.processCommand(message)
             } else {

@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import nick.mirosh.chart.ChartBuilder
 import nick.mirosh.networking.TelegramApiManager
 import nick.mirosh.repository.TransactionRepo
+import nick.mirosh.utils.Category
 import org.telegram.telegrambots.meta.api.objects.Message
 import java.time.LocalDate
 import java.time.ZoneId
@@ -29,7 +30,15 @@ class CommandManager(
 
         println("Processing command: $command")
         when {
-            command.contains(WEEKLY_STATUS_COMMAND) -> getWeeklyStatus(chatId)
+            command.contains(WEEKLY_STATUS_COMMAND) -> {
+                try {
+                    getWeeklyStatus(chatId)
+                } catch (e: Exception) {
+                    println("Error = ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+
             command.contains(SET_BUDGET_COMMAND) -> setBudget()
 
             else -> {
@@ -38,43 +47,26 @@ class CommandManager(
     }
 
     private fun getWeeklyStatus(chatId: Long) {
-        telegramApiManager.sendPhoto(chatId.toString())
-//        CoroutineScope(Dispatchers.IO).launch {
-//            val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
-//            val budgets = transactionRepo.getBudgets()
-//            val weeksInMonth = getWeeksInCurrentMonth()
-//
-//            val mapByCategory = weeklyTransactions.groupBy { it.category }
-//
-//            val report = mutableListOf<String>()
-//            report.add("Weekly Status Report:")
-//            report.add("This month has ${"%.2f".format(weeksInMonth)} weeks")
-//            report.add("-------------------------------------")
-//            val categoryHeader = "    Category    "
-//            val weeklyBudgetHeader = " Weekly Budget "
-//            val moneyLeftForTheWeekHeader = " Money Left "
-//            report.add("|$categoryHeader|$weeklyBudgetHeader|$moneyLeftForTheWeekHeader|")
-//            report.add("-------------------------------------")
-//
-//            for ((category, transactions) in mapByCategory) {
-//                val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
-//                val budget =
-//                    budgets.firstOrNull { it.category == category }?.amountForCurrentWeek ?: 0
-//                val moneyLeft = budget - totalMoneySpentForTheWeek
-//                println("moneyLeft = $moneyLeft")
-//
-//                val moneyLeftFormatted = parseIntToText(moneyLeft)
-//                val budgetFormatted = parseIntToText(budget)
-//
-//                report.add(
-//                    "| $category | $budgetFormatted | $moneyLeftFormatted |"
-//                )
-//            }
-//            report.add("-------------------------------------")
-//            report.add("Total spent: ${parseIntToText(weeklyTransactions.sumOf { it.sum })}")
-//            _report.value = chatId to report
-//        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
+            val budgets = transactionRepo.getBudgets()
+
+            val mapByCategory = weeklyTransactions.groupBy { it.category }
+
+            val report = mutableListOf<String>()
+
+            for ((category, transactions) in mapByCategory) {
+                val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
+                val budget = budgets.first { it.category == category }
+                val moneyLeft = budget.amountForCurrentWeek - totalMoneySpentForTheWeek
+                if (category == Category.COFFEE) {
+                    telegramApiManager.sendPhoto(chatId.toString(), moneyLeft, budget)
+                }
+            }
+            _report.value = chatId to report
+        }
     }
+
 
     fun getWeeksInCurrentMonth(): Float {
         val zone = ZoneId.of("Asia/Bangkok")
