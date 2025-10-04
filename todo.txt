@@ -1,6 +1,19 @@
 
 
+
 [x] show how much money is left = budget - current weekly status
+[ ] deploy to Railway automatically ONLY if the current env is production (set a local var?)
+
+[ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
+
+
+[ ] add an option to reduce the next weekly budget based on the amount of money's left
+
+
+
+[ ] if the budget was already inserted - update it - don't insert the new one
+[ ] if the category cannot be recognized - DO NOT discard the first word - put it into the description.
+[x] show the current status with a graph - https://quickchart.io/
 
 This is more important for accuracy right now ->
 
@@ -11,12 +24,12 @@ This is more important for accuracy right now ->
 [ ] if the category cannot be recognized - DO NOT discard the first word - put it into the description.
 [ ] show the current status with a graph - https://quickchart.io/
 
-    [ ] fixate the budget for the week at the start of the week
+
+    [x] fixate the budget for the week at the start of the week
         [ ] run cron job
         [ ] monthly budget / amount of weeks -> write into the database
-    [ ] reset the budget at midnight monday morning
-[ ] allow to delete / change the transaction after it was already posted via a button
 
+[ ] allow to delete / change the transaction after it was already posted via a button
 [ ] pin chat message
     at the start of the week
     https://chatgpt.com/c/68d80a2f-613c-8322-b3e2-eef0efb75cfd
@@ -24,6 +37,20 @@ This is more important for accuracy right now ->
    https://crontab.guru/#5_4_25_*_*
     - notify the chat as to what's the budget fo reach category left for the week (and this budget sticks until next week)
 
-
 [ ] Add the ability to set budget for the month for a specific category.
 [ ] connect an API for converting currencies
+
+
+
+
+[ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
+
+- determine budget per day.
+
+if Sunday month is different from current Month. Determine the amount of days left in this month and
+and multiply daily budget by that amount of days.
+
+else if Monday month is different from current Month. Determine when the current month starts and get that amount of days
+from current day
+
+else  simply multiply by 7 and return because we're in a full week within a month

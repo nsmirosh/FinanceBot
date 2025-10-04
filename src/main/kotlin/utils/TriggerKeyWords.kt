@@ -113,6 +113,10 @@ object TriggerKeyWords {
     val subscriptionKeywords = listOf(
         "подписка",
         "subscription",
+        "subs",
+        "subscriptions",
+        "netflix",
+        "vpn",
         "подписки",
         "sub",
         "membership",

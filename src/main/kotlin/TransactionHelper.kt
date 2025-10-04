@@ -5,6 +5,7 @@ import org.bson.types.ObjectId
 import org.telegram.telegrambots.meta.api.objects.Update
 import nick.mirosh.utils.Category.*
 import nick.mirosh.utils.TriggerKeyWords
+import nick.mirosh.utils.parseSumText
 
 fun parseUpdate(update: Update): Transaction {
 
@@ -30,7 +31,7 @@ fun parseUpdate(update: Update): Transaction {
     val sumText = parts[0]
     val secondArg = parts[1]
     val categoryText = parts[2]
-    val description = if (parts.size > 3) parts.drop(3).toString() else ""
+    var description = if (parts.size > 3) parts.drop(3).toString() else ""
 
     if (secondArg.isBlank()) {
         throw IllegalArgumentException("Currency cannot be empty")
@@ -43,31 +44,13 @@ fun parseUpdate(update: Update): Transaction {
 
     val currency = determineCurrency(secondArg)
     val category = determineCategory(categoryText)
+    if (category == OTHER && parts.size == 3) {
+       description = categoryText
+    }
 
     return Transaction(ObjectId(), update.message.date, sum, currency, category, description, name)
 }
 
-fun parseSumText(sumText: String): Int =
-    if (sumText.contains(".")) {
-        val parts = sumText.split(".")
-        if (parts.size != 2) {
-            throw IllegalArgumentException("Invalid sum format: $sumText")
-        }
-        val integerPart = parts[0].toInt()
-        val cents = parts[1].toInt()
-        integerPart * 100 + cents
-    } else {
-        sumText.toInt() * 100
-    }
-
-
-fun parseIntToText(amount: Int): String {
-    if (amount == 0) return "0.00"
-
-    val integerPart = amount / 100
-    val centsPart = amount % 100
-    return if (centsPart < 10) "$integerPart.0$centsPart" else "$integerPart.$centsPart"
-}
 
 
 private fun determineCurrency(currencyText: String): String {
