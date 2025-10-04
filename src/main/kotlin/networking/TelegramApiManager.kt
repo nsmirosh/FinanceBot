@@ -87,7 +87,7 @@ fun buildChartRequestBody(
                 Dataset(
                     backgroundColor = "#ffb703",
                     label = "Budget",
-                    data = listOf(budget.amountForCurrentWeek)
+                    data = listOf(budget.amountForCurrentWeek / 100)
                 )
             )
         ),

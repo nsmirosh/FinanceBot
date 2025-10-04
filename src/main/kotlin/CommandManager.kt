@@ -53,17 +53,15 @@ class CommandManager(
 
             val mapByCategory = weeklyTransactions.groupBy { it.category }
 
-            val report = mutableListOf<String>()
-
             for ((category, transactions) in mapByCategory) {
                 val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
                 val budget = budgets.first { it.category == category }
                 val moneyLeft = budget.amountForCurrentWeek - totalMoneySpentForTheWeek
-                if (category == Category.COFFEE) {
+                if (category == Category.GROCERIES) {
                     telegramApiManager.sendPhoto(chatId.toString(), moneyLeft, budget)
                 }
             }
-            _report.value = chatId to report
+//            _report.value = chatId to report
         }
     }
 
