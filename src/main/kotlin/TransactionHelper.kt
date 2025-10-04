@@ -31,7 +31,7 @@ fun parseUpdate(update: Update): Transaction {
     val sumText = parts[0]
     val secondArg = parts[1]
     val categoryText = parts[2]
-    val description = if (parts.size > 3) parts.drop(3).toString() else ""
+    var description = if (parts.size > 3) parts.drop(3).toString() else ""
 
     if (secondArg.isBlank()) {
         throw IllegalArgumentException("Currency cannot be empty")
@@ -44,6 +44,9 @@ fun parseUpdate(update: Update): Transaction {
 
     val currency = determineCurrency(secondArg)
     val category = determineCategory(categoryText)
+    if (category == OTHER && parts.size == 3) {
+       description = categoryText
+    }
 
     return Transaction(ObjectId(), update.message.date, sum, currency, category, description, name)
 }
