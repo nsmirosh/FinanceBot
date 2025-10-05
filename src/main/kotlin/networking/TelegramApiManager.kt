@@ -10,7 +10,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import nick.mirosh.BOT_TOKEN
-import nick.mirosh.repository.Budget
+import nick.mirosh.CommandManager
 
 
 @Serializable
@@ -70,46 +70,47 @@ data class Dataset(
 
 
 fun buildChartRequestBody(
-    moneyLeftInCents: Int,
-    budget: Budget
+    report: CommandManager.Report,
 ) =
-    Chart(
-        type = "bar",
-        data = ChartData(
-            labels = listOf(""),
-            datasets = listOf(
-                Dataset(
-                    backgroundColor = "#8ac926",
-                    label = "Money Left",
-                    data = listOf(moneyLeftInCents / 100)
-                ),
+    with(report) {
+        Chart(
+            type = "bar",
+            data = ChartData(
+                labels = listOf(""),
+                datasets = listOf(
+                    Dataset(
+                        backgroundColor = "#8ac926",
+                        label = "Money Left = ${moneyLeft / 100} ",
+                        data = listOf(moneyLeft / 100)
+                    ),
 
-                Dataset(
-                    backgroundColor = "#ffb703",
-                    label = "Budget",
-                    data = listOf(budget.amountForCurrentWeek / 100)
+                    Dataset(
+                        backgroundColor = "#ffb703",
+                        label = "Budget = ${weekBudget / 100}",
+                        data = listOf(weekBudget / 100)
+                    )
                 )
-            )
-        ),
+            ),
 
-        options = Options(
-            plugins = Plugins(
-                title = Title(
-                    display = true,
-                    text = budget.category.name
+            options = Options(
+                plugins = Plugins(
+                    title = Title(
+                        display = true,
+                        text = category.displayName ?: "Unknown"
+                    )
                 )
             )
         )
-    )
+    }
 
 
 class TelegramApiManager(private val httpClient: HttpClient) {
 
     fun sendPhoto(
-        chatId: String,
-        moneyLeftInCentsForCategory: Int,
-        budget: Budget
-    ) {
+        chatId: Long,
+        report: CommandManager.Report,
+        ) {
+
         val pictureUrl = buildUrl {
             protocol = URLProtocol.HTTPS
             host = "quickchart.io"
@@ -119,7 +120,7 @@ class TelegramApiManager(private val httpClient: HttpClient) {
                 "c",
                 Json.encodeToString(
                     Chart.serializer(),
-                    buildChartRequestBody(moneyLeftInCentsForCategory, budget)
+                    buildChartRequestBody(report)
                 )
             )
         }
@@ -135,7 +136,7 @@ class TelegramApiManager(private val httpClient: HttpClient) {
                 )
                 setBody(
                     TelegramRequestBody(
-                        chatId = chatId,
+                        chatId = chatId.toString(),
                         photo = pictureUrl.toString()
                     )
                 )
@@ -144,3 +145,18 @@ class TelegramApiManager(private val httpClient: HttpClient) {
     }
 
 }
+
+
+/*
+
+- determine budget per day.
+
+if Sunday of current week month is different from current Month. Determine the amount of days left in this month and
+and multiply daily budget by that amount of days.
+
+else if Monday month is different from current Month. Determine when the current month starts and get that amount of days
+from current day
+
+else  simply multiply by 7 and return because we're in a full week within a month
+ */
+

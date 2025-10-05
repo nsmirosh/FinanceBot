@@ -1,9 +1,6 @@
 
-
-
 [x] show how much money is left = budget - current weekly status
-[ ] deploy to Railway automatically ONLY if the current env is production (set a local var?)
-
+[x] deploy to Railway automatically ONLY if the current env is production (set a local var?)
 [ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
 
 
@@ -40,14 +37,11 @@ This is more important for accuracy right now ->
 [ ] Add the ability to set budget for the month for a specific category.
 [ ] connect an API for converting currencies
 
-
-
-
 [ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
 
 - determine budget per day.
 
-if Sunday month is different from current Month. Determine the amount of days left in this month and
+if Sunday of current week month is different from current Month. Determine the amount of days left in this month and
 and multiply daily budget by that amount of days.
 
 else if Monday month is different from current Month. Determine when the current month starts and get that amount of days

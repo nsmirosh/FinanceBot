@@ -2,10 +2,9 @@ package nick.mirosh
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import nick.mirosh.chart.ChartBuilder
 import nick.mirosh.networking.TelegramApiManager
 import nick.mirosh.repository.TransactionRepo
 import nick.mirosh.utils.Category
@@ -18,26 +17,22 @@ const val SET_BUDGET_COMMAND = "set_budget"
 
 class CommandManager(
     private val transactionRepo: TransactionRepo,
-    private val telegramApiManager: TelegramApiManager
+    private val telegramApiManager: TelegramApiManager,
 ) {
+    private val _showKeyboard = MutableSharedFlow<Long>()
+    val showKeyboard = _showKeyboard.asSharedFlow()
 
-    private val _report = MutableStateFlow<Pair<Long, List<String>>?>(null)
-    val report = _report.asStateFlow()
+    private val _showError = MutableSharedFlow<Pair<Long, String>>()
+    val showError = _showError.asSharedFlow()
 
     fun processCommand(message: Message) {
         val command = message.text.lowercase()
         val chatId = message.chatId
-
-        println("Processing command: $command")
         when {
-            command.contains(WEEKLY_STATUS_COMMAND) -> {
-                try {
-                    getWeeklyStatus(chatId)
-                } catch (e: Exception) {
-                    println("Error = ${e.message}")
-                    e.printStackTrace()
+            command.contains(WEEKLY_STATUS_COMMAND) ->
+                CoroutineScope(Dispatchers.Default).launch {
+                    _showKeyboard.emit(chatId)
                 }
-            }
 
             command.contains(SET_BUDGET_COMMAND) -> setBudget()
 
@@ -46,24 +41,37 @@ class CommandManager(
         }
     }
 
-    private fun getWeeklyStatus(chatId: Long) {
+    fun sendWeeklyReport(chatId: Long, category: Category) {
         CoroutineScope(Dispatchers.IO).launch {
-            val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
-            val budgets = transactionRepo.getBudgets()
+            try {
+                val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
+                val budgets = transactionRepo.getBudgets()
+                val transactionsForCategory = weeklyTransactions.filter { it.category == category }
+                val totalMoneySpentForTheWeek = transactionsForCategory.sumOf { it.sum }
 
-            val mapByCategory = weeklyTransactions.groupBy { it.category }
-
-            for ((category, transactions) in mapByCategory) {
-                val totalMoneySpentForTheWeek = transactions.sumOf { it.sum }
                 val budget = budgets.first { it.category == category }
-                val moneyLeft = budget.amountForCurrentWeek - totalMoneySpentForTheWeek
-                if (category == Category.GROCERIES) {
-                    telegramApiManager.sendPhoto(chatId.toString(), moneyLeft, budget)
-                }
+                val calculatedWeekBudget = calculateThisWeekBudget(budget.amountForMonth)
+
+                val moneyLeft = calculatedWeekBudget - totalMoneySpentForTheWeek
+
+                val report = Report(
+                    moneyLeft = moneyLeft,
+                    weekBudget = calculatedWeekBudget,
+                    category = category
+                )
+                telegramApiManager.sendPhoto(chatId, report)
+            } catch (e: Exception) {
+                val message = "Failed to send weekly report: ${e.message}"
+                _showError.emit(chatId to message)
             }
-//            _report.value = chatId to report
         }
     }
+
+    data class Report(
+        val moneyLeft: Int,
+        val weekBudget: Int,
+        val category: Category
+    )
 
 
     fun getWeeksInCurrentMonth(): Float {
@@ -80,25 +88,4 @@ class CommandManager(
             transactionRepo.setHardCodedBudgets()
         }
     }
-
-//    private fun formatting() {
-//
-//        val totalAmountLength = totalAmount.toString().length
-//
-//        val categoryPaddingNeededForEachSide = (categoryHeader.length - category.length) / 2
-//        val categoryFormatted = if (categoryPaddingNeededForEachSide > 0) {
-//            category
-//                .padStart(category.length + categoryPaddingNeededForEachSide).let {
-//                    it.padEnd(it.length + categoryPaddingNeededForEachSide)
-//                }
-//        } else category
-//
-//
-//        val totalAmountPaddingNeededForEachSide = (totalAmountHeader.length - totalAmountLength) / 2
-//        val totalAmountFormatted = if (totalAmountPaddingNeededForEachSide > 0)
-//            totalAmount.toString()
-//                .padStart(totalAmountPaddingNeededForEachSide)
-//                .padEnd(totalAmountPaddingNeededForEachSide)
-//        else totalAmount.toString()
-//    }
 }

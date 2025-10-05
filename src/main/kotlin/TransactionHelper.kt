@@ -6,6 +6,10 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import nick.mirosh.utils.Category.*
 import nick.mirosh.utils.TriggerKeyWords
 import nick.mirosh.utils.parseSumText
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 
 fun parseUpdate(update: Update): Transaction {
 
@@ -87,5 +91,37 @@ private fun determineCategory(categoryText: String): Category {
             in educationKeywords -> EDUCATION
             else -> OTHER
         }
+    }
+}
+
+fun calculateThisWeekBudget(
+    monthBudget: Int,
+    zone: ZoneId = ZoneId.of("Asia/Bangkok")
+): Int {
+    // Ensure we evaluate based on provided date (zone param kept for clarity / future extension)
+
+    val currentDate = LocalDate.now(zone)
+
+    val dailyBudget = monthBudget / currentDate.lengthOfMonth()
+
+    // Find Monday of the current week (previous or same Monday)
+    val monday = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val sunday = monday.plusDays(6)
+
+    return dailyBudget * when {
+        // Sunday is in a different month -> week goes into next month (partial at end of month)
+        sunday.month != currentDate.month -> {
+            // Days left in current month including today
+            currentDate.lengthOfMonth() - currentDate.dayOfMonth + 1
+        }
+
+        // Monday is in a different month -> week started in previous month (partial at start of month)
+        monday.month != currentDate.month -> {
+            // Days from start of current month up to and including today
+            currentDate.dayOfMonth
+        }
+
+        // Full week inside the same month
+        else -> 7
     }
 }

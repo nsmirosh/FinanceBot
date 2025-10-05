@@ -9,7 +9,6 @@ import io.ktor.serialization.kotlinx.json.json
 import nick.mirosh.Bot
 import nick.mirosh.CommandManager
 import nick.mirosh.TransactionManager
-import nick.mirosh.chart.ChartBuilder
 import nick.mirosh.networking.TelegramApiManager
 import nick.mirosh.repository.TransactionRepo
 import nick.mirosh.repository.TransactionRepoImpl
@@ -35,14 +34,15 @@ val appModule = module {
         api
     }
 
-    single { HttpClient(Java) {
-        install(ContentNegotiation) {
-            json()
+    single {
+        HttpClient(Java) {
+            install(ContentNegotiation) {
+                json()
+            }
+            install(Logging) {
+                level = LogLevel.ALL
+            }
         }
-        install(Logging) {
-            level = LogLevel.ALL
-        }
-    } }
-    singleOf(::ChartBuilder)
+    }
     singleOf(::TelegramApiManager)
 }

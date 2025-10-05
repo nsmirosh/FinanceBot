@@ -3,14 +3,16 @@ package nick.mirosh
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import nick.mirosh.utils.Category
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 
 class Bot(
     private val commandManager: CommandManager,
-    private val transactionManager: TransactionManager
+    private val transactionManager: TransactionManager,
 ) : TelegramLongPollingBot() {
 
     init {
@@ -24,9 +26,11 @@ class Bot(
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
-        println(update)
         val message = update.message
-        //TODO do I even need these checks?
+        if (update.hasCallbackQuery()) {
+            handleCallbackQuery(update)
+            return
+        }
         if (message.isGroupMessage || message.isSuperGroupMessage || message.isUserMessage) {
             if (message.isCommand) {
                 commandManager.processCommand(message)
@@ -36,23 +40,64 @@ class Bot(
         }
     }
 
-    private fun listenForCommandResults() {
-        CoroutineScope(Dispatchers.IO).launch {
-            commandManager.report.collect { chatIdAndReport ->
-                chatIdAndReport?.let {
-                    val report = chatIdAndReport.second
-                    val chatId = chatIdAndReport.first
-                    val reportAsMessage = report.joinToString("\n")
-                    sendText(chatId, reportAsMessage)
-                }
+    private fun handleCallbackQuery(update: Update) {
+        val callbackQuery = update.callbackQuery
+        val chatId = callbackQuery.message.chatId.toString()
+        val data = callbackQuery.data
+
+        if (data.startsWith("category:")) {
+            val categoryText = data.substringAfter("category:")
+            val category = Category.valueOf(categoryText)
+            sendText(chatId.toLong(), "Building a report for ${category.displayName}. Please wait...")
+            try {
+                commandManager.sendWeeklyReport(update.callbackQuery.message.chatId, category)
+            } catch (e: Exception) {
+                sendText(chatId.toLong(), "Error building report: ${e.message}")
             }
         }
+    }
 
+    fun buildCategoryKeyboard(who: Long) {
+        val userCategories = Category.entries
+
+        val rows = userCategories.map { category ->
+            listOf(InlineKeyboardButton().apply {
+                text = category.name
+                callbackData = "category:${category.name}"
+            })
+        }
+        val markup = InlineKeyboardMarkup()
+        markup.keyboard = rows
+
+        val sm = SendMessage
+            .builder()
+            .chatId(who.toString())
+            .replyMarkup(markup)
+            .text("choose a category you want a report for")
+            .build()
+        try {
+            execute(sm)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun listenForCommandResults() {
         CoroutineScope(Dispatchers.IO).launch {
             transactionManager.message.collect { chatIdAndMessage ->
                 chatIdAndMessage?.let {
                     sendText(it.first, it.second)
                 }
+            }
+        }
+        CoroutineScope(Dispatchers.Default).launch {
+            commandManager.showKeyboard.collect {
+                buildCategoryKeyboard(it)
+            }
+        }
+        CoroutineScope(Dispatchers.Default).launch {
+            commandManager.showError.collect {
+                sendText(it.first, it.second)
             }
         }
     }
@@ -65,4 +110,5 @@ class Bot(
             e.printStackTrace()
         }
     }
+
 }
