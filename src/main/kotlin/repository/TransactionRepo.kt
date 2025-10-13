@@ -40,15 +40,13 @@ class TransactionRepoImpl : TransactionRepo {
 
     val database = createMongoClient()
     val transactions = database.getCollection<Transaction>(TRANSACTIONS_COLLECTION_NAME)
-    val budgets = database.getCollection<Budget>(BUDGETS_COLLECTION_NAME)
+
 
     override suspend fun createTransaction(transaction: Transaction): Result<Transaction> {
         return try {
             val result = transactions.insertOne(transaction)
-            println("Success! Inserted document id: " + result.insertedId)
             Result.Success(transaction)
         } catch (e: MongoException) {
-            System.err.println("Unable to insert due to an error: $e")
             Result.Error(e)
         }
 
@@ -64,7 +62,6 @@ class TransactionRepoImpl : TransactionRepo {
         val startOfWeekZdt = today
             .with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             .atStartOfDay(zone)
-        println("startOfWeekZdt: $startOfWeekZdt")
 
         // End of week (exclusive) = next Monday 00:00
         val endOfWeekExclusiveZdt = startOfWeekZdt.plusDays(7)
@@ -75,7 +72,6 @@ class TransactionRepoImpl : TransactionRepo {
 
         val startMillis = startUtc.toInstant().toEpochMilli() / 1000
         val endMillisExclusive = endUtc.toInstant().toEpochMilli() / 1000
-        println("Start of week: $startMillis, end of week: $endMillisExclusive")
 
         val filter = Filters.and(
             Filters.gte("utcDate", startMillis),
@@ -103,9 +99,8 @@ class TransactionRepoImpl : TransactionRepo {
     override suspend fun setHardCodedBudgets() {
 
         val weeksInCurrentMonth = weekInCurrentMonth()
-        println("Weeks in current month: $weeksInCurrentMonth")
 
-       //In thai baht cents
+        //In thai baht cents
         val groceriesBudget = 2900000
         val restaurantsBudget = 645000
         val coffeeBudget = 320000
@@ -127,8 +122,8 @@ class TransactionRepoImpl : TransactionRepo {
             Budget(HEALTH, health, (health / weeksInCurrentMonth).toInt())
         )
         try {
-            val result = this@TransactionRepoImpl.budgets.insertMany(budgets)
-            println("Success! Inserted document id: " + result.insertedIds)
+            val result =
+                this@TransactionRepoImpl.database.getCollection<Budget>(BUDGETS_COLLECTION_NAME).insertMany(budgets)
 //            Result.Success(transaction)
         } catch (e: MongoException) {
             System.err.println("Unable to insert due to an error: $e")
@@ -138,8 +133,7 @@ class TransactionRepoImpl : TransactionRepo {
 
     override suspend fun setBudget(budget: Budget): Result<Unit> =
         try {
-            val result = this@TransactionRepoImpl.budgets.insertOne(budget)
-            println("Success! Inserted document id: " + result.insertedId)
+            val result = this@TransactionRepoImpl.database.getCollection<Budget>(BUDGETS_COLLECTION_NAME).insertOne(budget)
             Result.Success(Unit)
         } catch (e: MongoException) {
             System.err.println("Unable to insert due to an error: $e")
@@ -148,6 +142,6 @@ class TransactionRepoImpl : TransactionRepo {
 
 
     override suspend fun getBudgets(): List<Budget> {
-        return budgets.find().toList()
+        return database.getCollection<Budget>(BUDGETS_COLLECTION_NAME).find().toList()
     }
 }

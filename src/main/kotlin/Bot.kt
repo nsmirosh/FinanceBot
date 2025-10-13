@@ -23,23 +23,28 @@ class Bot(
         listenForCommandResults()
     }
 
-    override fun getBotUsername(): String? {
+
+    override fun getBotUsername(): String {
         return "Финансовый помощник Асеньки и Коленьки"
     }
 
     override fun getBotToken() = BOT_TOKEN
 
     override fun onUpdateReceived(update: Update) {
+        println(update)
         val message = update.message
+
         if (update.hasCallbackQuery()) {
             handleCallbackQuery(update)
             return
         }
         if (message.isGroupMessage || message.isSuperGroupMessage || message.isUserMessage) {
-            if (message.isCommand) {
-                scope.launch { commandManager.processCommand(message) }
-            } else {
-                transactionManager.processTransaction(update)
+            scope.launch {
+                if (message.isCommand) {
+                    commandManager.processCommand(message)
+                } else {
+                    transactionManager.processTransaction(update)
+                }
             }
         }
     }
