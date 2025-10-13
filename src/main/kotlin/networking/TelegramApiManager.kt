@@ -3,9 +3,6 @@ package nick.mirosh.networking
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -106,11 +103,10 @@ fun buildChartRequestBody(
 
 class TelegramApiManager(private val httpClient: HttpClient) {
 
-    fun sendPhoto(
+    suspend fun sendPhoto(
         chatId: Long,
         report: CommandManager.Report,
-        ) {
-
+    ) {
         val pictureUrl = buildUrl {
             protocol = URLProtocol.HTTPS
             host = "quickchart.io"
@@ -124,23 +120,21 @@ class TelegramApiManager(private val httpClient: HttpClient) {
                 )
             )
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            httpClient.post {
-                url {
-                    protocol = URLProtocol.HTTPS
-                    host = "api.telegram.org"
-                    path("bot$BOT_TOKEN/sendPhoto")
-                }
-                contentType(
-                    ContentType.Application.Json
-                )
-                setBody(
-                    TelegramRequestBody(
-                        chatId = chatId.toString(),
-                        photo = pictureUrl.toString()
-                    )
-                )
+        httpClient.post {
+            url {
+                protocol = URLProtocol.HTTPS
+                host = "api.telegram.org"
+                path("bot$BOT_TOKEN/sendPhoto")
             }
+            contentType(
+                ContentType.Application.Json
+            )
+            setBody(
+                TelegramRequestBody(
+                    chatId = chatId.toString(),
+                    photo = pictureUrl.toString()
+                )
+            )
         }
     }
 

@@ -1,10 +1,9 @@
 
 [x] show how much money is left = budget - current weekly status
 [x] deploy to Railway automatically ONLY if the current env is production (set a local var?)
-[ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
-
-
-[ ] add an option to reduce the next weekly budget based on the amount of money's left
+[x] make sure that the week that is "not full" - i.e. start of the month -> oct 1st is wed so the week is -> sun
+[ ] There's a memory leak - see the logs from Railway
+[ ] add an option to reduce the next weekly budget based on the amount of money's left - aka spillover - make this an optional setting
 
 
 

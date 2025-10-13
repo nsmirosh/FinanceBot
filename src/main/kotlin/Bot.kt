@@ -2,6 +2,8 @@ package nick.mirosh
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import nick.mirosh.utils.Category
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
@@ -14,6 +16,8 @@ class Bot(
     private val commandManager: CommandManager,
     private val transactionManager: TransactionManager,
 ) : TelegramLongPollingBot() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
         listenForCommandResults()
@@ -33,7 +37,7 @@ class Bot(
         }
         if (message.isGroupMessage || message.isSuperGroupMessage || message.isUserMessage) {
             if (message.isCommand) {
-                commandManager.processCommand(message)
+                scope.launch { commandManager.processCommand(message) }
             } else {
                 transactionManager.processTransaction(update)
             }
@@ -49,11 +53,7 @@ class Bot(
             val categoryText = data.substringAfter("category:")
             val category = Category.valueOf(categoryText)
             sendText(chatId.toLong(), "Building a report for ${category.displayName}. Please wait...")
-            try {
-                commandManager.sendWeeklyReport(update.callbackQuery.message.chatId, category)
-            } catch (e: Exception) {
-                sendText(chatId.toLong(), "Error building report: ${e.message}")
-            }
+            scope.launch { commandManager.sendWeeklyReport(update.callbackQuery.message.chatId, category) }
         }
     }
 
@@ -83,19 +83,19 @@ class Bot(
     }
 
     private fun listenForCommandResults() {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             transactionManager.message.collect { chatIdAndMessage ->
                 chatIdAndMessage?.let {
                     sendText(it.first, it.second)
                 }
             }
         }
-        CoroutineScope(Dispatchers.Default).launch {
+        scope.launch {
             commandManager.showKeyboard.collect {
                 buildCategoryKeyboard(it)
             }
         }
-        CoroutineScope(Dispatchers.Default).launch {
+        scope.launch {
             commandManager.showError.collect {
                 sendText(it.first, it.second)
             }
@@ -111,4 +111,8 @@ class Bot(
         }
     }
 
+    override fun onClosing() {
+        scope.cancel()
+        super.onClosing()
+    }
 }
