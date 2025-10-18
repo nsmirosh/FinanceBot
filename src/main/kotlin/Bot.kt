@@ -55,11 +55,13 @@ class Bot(
 
             val category = Category.valueOf(splitData[2])
             val isWeekly = splitData[0] == "week"
-            sendText(chatId.toLong(), "Building a report for ${category.displayName}. Please wait...")
+            sendText(
+                chatId.toLong(),
+                "Building a ${if (isWeekly) "weekly" else "monthly"} report for ${category.displayName}. Please wait..."
+            )
             val chatId = update.callbackQuery.message.chatId
             scope.launch {
-                if (isWeekly) commandManager.sendWeeklyReport(chatId, category)
-                else commandManager.getMonthlySpendingFor(chatId, category)
+                commandManager.generateReport(chatId, category, isWeekly)
             }
         }
     }

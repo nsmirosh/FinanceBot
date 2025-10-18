@@ -41,43 +41,41 @@ class CommandManager(
         }
     }
 
-    suspend fun sendWeeklyReport(chatId: Long, category: Category) {
-        try {
-            val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
-            val budgets = transactionRepo.getBudgets()
-            val transactionsForCategory = weeklyTransactions.filter { it.category == category }
-            val totalMoneySpentForTheWeek = transactionsForCategory.sumOf { it.sum }
+    suspend fun buildWeekReport(category: Category): Report {
+        val weeklyTransactions = transactionRepo.getCurrentWeekTransactions()
+        val budgets = transactionRepo.getBudgets()
+        val transactionsForCategory = weeklyTransactions.filter { it.category == category }
+        val totalMoneySpentForTheWeek = transactionsForCategory.sumOf { it.sum }
 
-            val budget = budgets.first { it.category == category }
-            val calculatedWeekBudget = calculateThisWeekBudget(budget.amountForMonth)
+        val budget = budgets.first { it.category == category }
+        val calculatedWeekBudget = calculateThisWeekBudget(budget.amountForMonth)
 
-            val moneyLeft = calculatedWeekBudget - totalMoneySpentForTheWeek
+        val moneyLeft = calculatedWeekBudget - totalMoneySpentForTheWeek
 
-            val report = Report(
-                moneyLeft = moneyLeft,
-                budget = calculatedWeekBudget,
-                category = category
-            )
-            telegramApiManager.sendPhoto(chatId, report)
-        } catch (e: Exception) {
-            val message = "Failed to send weekly report: ${e.message}"
-            _showError.tryEmit(chatId to message)
-        }
+        return Report(
+            moneyLeft = moneyLeft,
+            budget = calculatedWeekBudget,
+            category = category
+        )
     }
 
 
+    suspend fun buildMonthReport(category: Category): Report {
+        val transactions = transactionRepo.getCurrentMonthTransactions()
+        val budget = transactionRepo.getBudgets().first { it.category == category }.amountForMonth
+        val moneyLeft = budget - transactions.filter { it.category == category }.sumOf { it.sum }
 
-    suspend fun getMonthlySpendingFor(chatId: Long, category: Category) {
+        return Report(
+            moneyLeft = moneyLeft,
+            budget = budget,
+            category = category
+        )
+    }
+
+
+    suspend fun generateReport(chatId: Long, category: Category, isWeekly: Boolean) {
         try {
-            val transactions = transactionRepo.getCurrentMonthTransactions()
-            val budget = transactionRepo.getBudgets().first { it.category == category }.amountForMonth
-            val moneyLeft = budget - transactions.filter { it.category == category }.sumOf { it.sum }
-
-            val report = Report(
-                moneyLeft = moneyLeft,
-                budget = budget,
-                category = category
-            )
+            val report = if (isWeekly) buildWeekReport(category) else buildMonthReport(category)
             telegramApiManager.sendPhoto(chatId, report)
         } catch (e: Exception) {
             val message = "Failed to send weekly report: ${e.message}"
