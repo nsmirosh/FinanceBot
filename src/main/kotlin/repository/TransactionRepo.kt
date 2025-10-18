@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 import nick.mirosh.utils.Category.*
+import java.time.ZonedDateTime
 
 data class Budget(
     val category: Category,
@@ -26,6 +27,7 @@ data class Budget(
 interface TransactionRepo {
     suspend fun createTransaction(transaction: Transaction): Result<Transaction>
     suspend fun getCurrentWeekTransactions(): List<Transaction>
+    suspend fun getCurrentMonthTransactions(): List<Transaction>
     suspend fun setHardCodedBudgets()
     suspend fun setBudget(budget: Budget): Result<Unit>
     suspend fun getBudgets(): List<Budget>
@@ -66,9 +68,23 @@ class TransactionRepoImpl : TransactionRepo {
         // End of week (exclusive) = next Monday 00:00
         val endOfWeekExclusiveZdt = startOfWeekZdt.plusDays(7)
 
-        // Convert both to UTC
-        val startUtc = startOfWeekZdt.withZoneSameInstant(ZoneOffset.UTC)
-        val endUtc = endOfWeekExclusiveZdt.withZoneSameInstant(ZoneOffset.UTC)
+        return getTransactions(startOfWeekZdt, endOfWeekExclusiveZdt)
+    }
+
+    override suspend fun getCurrentMonthTransactions(): List<Transaction> {
+
+        val zone = ZoneId.of("Asia/Bangkok")
+        val today = LocalDate.now(zone)
+
+        val startOfMonthZdt = today.withDayOfMonth(1).atStartOfDay(zone)
+        val endOfMonth = startOfMonthZdt.plusMonths(1)
+        return getTransactions(startOfMonthZdt, endOfMonth)
+
+    }
+
+    private suspend fun getTransactions(start: ZonedDateTime, end: ZonedDateTime): List<Transaction> {
+        val startUtc = start.withZoneSameInstant(ZoneOffset.UTC)
+        val endUtc = end.withZoneSameInstant(ZoneOffset.UTC)
 
         val startMillis = startUtc.toInstant().toEpochMilli() / 1000
         val endMillisExclusive = endUtc.toInstant().toEpochMilli() / 1000
@@ -133,7 +149,8 @@ class TransactionRepoImpl : TransactionRepo {
 
     override suspend fun setBudget(budget: Budget): Result<Unit> =
         try {
-            val result = this@TransactionRepoImpl.database.getCollection<Budget>(BUDGETS_COLLECTION_NAME).insertOne(budget)
+            val result =
+                this@TransactionRepoImpl.database.getCollection<Budget>(BUDGETS_COLLECTION_NAME).insertOne(budget)
             Result.Success(Unit)
         } catch (e: MongoException) {
             System.err.println("Unable to insert due to an error: $e")

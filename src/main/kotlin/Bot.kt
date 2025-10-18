@@ -1,10 +1,6 @@
 package nick.mirosh
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import nick.mirosh.utils.Category
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -54,21 +50,27 @@ class Bot(
         val chatId = callbackQuery.message.chatId.toString()
         val data = callbackQuery.data
 
-        if (data.startsWith("category:")) {
-            val categoryText = data.substringAfter("category:")
-            val category = Category.valueOf(categoryText)
+        if (data.contains("category:")) {
+            val splitData = data.split(":")
+
+            val category = Category.valueOf(splitData[2])
+            val isWeekly = splitData[0] == "week"
             sendText(chatId.toLong(), "Building a report for ${category.displayName}. Please wait...")
-            scope.launch { commandManager.sendWeeklyReport(update.callbackQuery.message.chatId, category) }
+            val chatId = update.callbackQuery.message.chatId
+            scope.launch {
+                if (isWeekly) commandManager.sendWeeklyReport(chatId, category)
+                else commandManager.getMonthlySpendingFor(chatId, category)
+            }
         }
     }
 
-    fun buildCategoryKeyboard(who: Long) {
+    fun buildCategoryKeyboard(who: Long, isWeeklyBudget: Boolean) {
         val userCategories = Category.entries
 
         val rows = userCategories.map { category ->
             listOf(InlineKeyboardButton().apply {
                 text = category.name
-                callbackData = "category:${category.name}"
+                callbackData = "${if (isWeeklyBudget) "week" else "month"}:category:${category.name}"
             })
         }
         val markup = InlineKeyboardMarkup()
@@ -96,8 +98,8 @@ class Bot(
             }
         }
         scope.launch {
-            commandManager.showKeyboard.collect {
-                buildCategoryKeyboard(it)
+            commandManager.showKeyboard.collect { (chatId, isWeekly) ->
+                buildCategoryKeyboard(chatId, isWeekly)
             }
         }
         scope.launch {

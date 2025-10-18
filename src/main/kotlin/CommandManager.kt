@@ -1,10 +1,7 @@
 package nick.mirosh
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
 import nick.mirosh.networking.TelegramApiManager
 import nick.mirosh.repository.TransactionRepo
 import nick.mirosh.utils.Category
@@ -13,13 +10,14 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 const val WEEKLY_STATUS_COMMAND = "weekly_status"
+const val MONTHLY_STATUS_COMMAND = "monthly_status"
 const val SET_BUDGET_COMMAND = "set_budget"
 
 class CommandManager(
     private val transactionRepo: TransactionRepo,
     private val telegramApiManager: TelegramApiManager,
 ) {
-    private val _showKeyboard = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    private val _showKeyboard = MutableSharedFlow<Pair<Long, Boolean>>(extraBufferCapacity = 1)
     val showKeyboard = _showKeyboard.asSharedFlow()
 
     private val _showError = MutableSharedFlow<Pair<Long, String>>(extraBufferCapacity = 1)
@@ -30,7 +28,11 @@ class CommandManager(
         val chatId = message.chatId
         when {
             command.contains(WEEKLY_STATUS_COMMAND) ->
-                _showKeyboard.tryEmit(chatId)
+                _showKeyboard.tryEmit(chatId to true)
+
+
+            command.contains(MONTHLY_STATUS_COMMAND) ->
+                _showKeyboard.tryEmit(chatId to false)
 
             command.contains(SET_BUDGET_COMMAND) -> setBudget()
 
@@ -53,7 +55,7 @@ class CommandManager(
 
             val report = Report(
                 moneyLeft = moneyLeft,
-                weekBudget = calculatedWeekBudget,
+                budget = calculatedWeekBudget,
                 category = category
             )
             telegramApiManager.sendPhoto(chatId, report)
@@ -63,9 +65,30 @@ class CommandManager(
         }
     }
 
+
+
+    suspend fun getMonthlySpendingFor(chatId: Long, category: Category) {
+        try {
+            val transactions = transactionRepo.getCurrentMonthTransactions()
+            val budget = transactionRepo.getBudgets().first { it.category == category }.amountForMonth
+            val moneyLeft = budget - transactions.filter { it.category == category }.sumOf { it.sum }
+
+            val report = Report(
+                moneyLeft = moneyLeft,
+                budget = budget,
+                category = category
+            )
+            telegramApiManager.sendPhoto(chatId, report)
+        } catch (e: Exception) {
+            val message = "Failed to send weekly report: ${e.message}"
+            _showError.tryEmit(chatId to message)
+        }
+    }
+
+
     data class Report(
         val moneyLeft: Int,
-        val weekBudget: Int,
+        val budget: Int,
         val category: Category
     )
 

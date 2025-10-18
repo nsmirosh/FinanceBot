@@ -1,29 +1,16 @@
 
-[x] show how much money is left = budget - current weekly status
-[x] deploy to Railway automatically ONLY if the current env is production (set a local var?)
-[x] make sure that the week that is "not full" - i.e. start of the month -> oct 1st is wed so the week is -> sun
-[ ] There's a memory leak - see the logs from Railway
+[ ] show an alert when the budget usage hits 70% of the budget
+[ ] show monthly budget for single category
+[ ] show monthly budget for all categories
 [ ] add an option to reduce the next weekly budget based on the amount of money's left - aka spillover - make this an optional setting
-
+[ ] add default currency
+[ ] all words following category should be put into the description
+[ ] generate a report
 
 
 [ ] if the budget was already inserted - update it - don't insert the new one
-[ ] if the category cannot be recognized - DO NOT discard the first word - put it into the description.
-[x] show the current status with a graph - https://quickchart.io/
 
 This is more important for accuracy right now ->
-
-[ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
-
-[ ] create a proper chart for categories
-
-[ ] if the category cannot be recognized - DO NOT discard the first word - put it into the description.
-[ ] show the current status with a graph - https://quickchart.io/
-
-
-    [x] fixate the budget for the week at the start of the week
-        [ ] run cron job
-        [ ] monthly budget / amount of weeks -> write into the database
 
 [ ] allow to delete / change the transaction after it was already posted via a button
 [ ] pin chat message
@@ -39,15 +26,6 @@ This is more important for accuracy right now ->
 [ ] make sure that the week that is "not full" - i.e. start of the month -> Oct 1st is Wed so the week is -> Sun
 
 - determine budget per day.
-
-if Sunday of current week month is different from current Month. Determine the amount of days left in this month and
-and multiply daily budget by that amount of days.
-
-else if Monday month is different from current Month. Determine when the current month starts and get that amount of days
-from current day
-
-else  simply multiply by 7 and return because we're in a full week within a month
-
 
 
 
