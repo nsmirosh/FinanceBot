@@ -61,9 +61,22 @@ class CommandManager(
 
 
     suspend fun buildMonthReport(category: Category): Report {
+        val budgets = transactionRepo.getBudgets()
+
+        val budget = if (category == Category.ALL) {
+            budgets.sumOf { it.amountForMonth }
+        } else {
+            budgets.first { it.category == category }.amountForMonth
+        }
+
         val transactions = transactionRepo.getCurrentMonthTransactions()
-        val budget = transactionRepo.getBudgets().first { it.category == category }.amountForMonth
-        val moneyLeft = budget - transactions.filter { it.category == category }.sumOf { it.sum }
+        val transactionsForCategory = if (category == Category.ALL) {
+            transactions
+        } else {
+            transactions.filter { it.category == category }
+        }.sumOf { it.sum }
+
+        val moneyLeft = budget - transactionsForCategory
 
         return Report(
             moneyLeft = moneyLeft,

@@ -12,5 +12,6 @@ enum class Category(val displayName: String? = null) {
     SUBSCRIPTIONS("Subscriptions"),
     EDUCATION("Education"),
     CLOTHES("Clothes"),
-    OTHER("Other")
+    OTHER("Other"),
+    ALL("All")
 }
