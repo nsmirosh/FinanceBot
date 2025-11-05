@@ -23,32 +23,35 @@ fun parseUpdate(update: Update): Transaction {
         message.text ?: message.caption ?: throw IllegalArgumentException("No text or caption found")
     val parts = text.trim().split(" ")
 
-    if (parts.size < 3) {
+    if (parts.size < 2) {
         throw IllegalArgumentException(
             when (langCode) {
-                "ru" -> "Неправильный формат. Ожидаемый формат: 'сумма, валюта, категория, описание(опционально)'  '"
-                else -> "Invalid format. Expected format: 'amount currency category'"
+//                "ru" -> "Неправильный формат. Ожидаемый формат: 'сумма, валюта, категория, описание(опционально)'  '"
+                "ru" -> "Неправильный формат. Ожидаемый формат: 'сумма, категория, описание(опционально)'  '"
+                else -> "Invalid format. Expected format: 'amount category description(optional)' '"
             }
         )
     }
 
     val sumText = parts[0]
-    val secondArg = parts[1]
-    val categoryText = parts[2]
-    var description = if (parts.size > 3) parts.drop(3).toString() else ""
+//    val secondArg = parts[1]
+    val categoryText = parts[1]
 
-    if (secondArg.isBlank()) {
-        throw IllegalArgumentException("Currency cannot be empty")
-    }
+    var description = if (parts.size > 2) parts.drop(2).toString() else ""
+
+//    if (secondArg.isBlank()) {
+//        throw IllegalArgumentException("Currency cannot be empty")
+//    }
     val sum = try {
         parseSumText(sumText)
     } catch (e: Exception) {
         throw IllegalArgumentException("Invalid sum format: $sumText")
     }
 
-    val currency = determineCurrency(secondArg)
+//    val currency = determineCurrency(secondArg)
+    val currency = "THB"
     val category = determineCategory(categoryText)
-    if (category == OTHER && parts.size == 3) {
+    if (category == OTHER || description.isEmpty()) {
        description = categoryText
     }
 

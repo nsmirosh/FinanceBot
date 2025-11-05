@@ -43,6 +43,11 @@ object TriggerKeyWords {
     )
 
     val restaurantKeywords = listOf(
+        "ужин",
+        "завтрак",
+        "граб",
+        "grab",
+        "обед",
         "рестораны",
         "restaurant",
         "resto",
